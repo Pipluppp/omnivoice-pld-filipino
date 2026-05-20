@@ -1,0 +1,39 @@
+# Python cache and local runtime artifacts
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+
+# Notebook/runtime scratch
+.ipynb_checkpoints/
+
+# Project data artifacts kept outside Git
+data/*
+!data/README.md
+data_artifacts/*
+!data_artifacts/README.md
+
+# Upstream external reference repo kept locally only
+.OmniVoice/
+
+# LaTeX build intermediates; PDFs are deliverables and are intentionally tracked
+*.aux
+*.bbl
+*.bcf
+*.blg
+*.fdb_latexmk
+*.fls
+*.log
+*.nav
+*.out
+*.run.xml
+*.snm
+*.synctex.gz
+*.toc
+
+# OS/editor noise
+.DS_Store
+Thumbs.db
+desktop.ini
