@@ -63,21 +63,33 @@ npm run preview:cf   # build + wrangler dev (production build locally)
 npm run deploy       # build + wrangler deploy (needs `npx wrangler login` once)
 ```
 
+## Status update (later on 2026-06-11)
+
+Done since the first write-up:
+
+- Committed on `main` and **deployed**:
+  https://omnivoice-showcase.duncanb013.workers.dev
+- **Model audio embedded** — generated wavs for all 4 models × 5 utterances,
+  exported from the WandB evaluation tables of the Kaggle runs (downloaded
+  locally as `step-1000/` and `step-2000-and-best-eval-4900/`, gitignored).
+  Table label → showcase dir: `base`→`base`, `finetuned`→`finetune_lr_2e-5`,
+  `finetuned_2000`→`finetune_lr_5e-6`, `finetuned_best`→`finetune_lr_1e-5`.
+- Added **voice prompts** (`public/audio/prompt/`) — the actual cloning input
+  each model heard, a different utterance from the same speaker; UI shows a
+  "Speaker audio" card with prompt + ground truth players.
+- Added `showcase/AGENTS.md` (canonical agent notes) and `showcase/CLAUDE.md`
+  (imports it).
+
 ## To-do later
 
-1. **Generate and add model audio** — run inference for each of the 4 models
-   on the 5 utterances, save as
-   `showcase/public/audio/<model-dir>/<utterance-id>.wav`
-   (exact same filename as the reference wav). They light up automatically.
-2. **Commit the showcase** — everything is currently uncommitted on `main`.
-3. **Deploy** — `npx wrangler login`, then `npm run deploy` from `showcase/`.
-4. (Optional) Bump `compatibility_date` in `wrangler.jsonc` — pinned to
+1. (Optional) Bump `compatibility_date` in `wrangler.jsonc` — pinned to
    `2026-05-01` because wrangler 4.86's local runtime rejected newer dates;
    upgrading wrangler lifts this.
-5. (Optional) If the controlled 5000-step LR reruns from
+2. (Optional) If the controlled 5000-step LR reruns from
    `hyperparameter_tuning.md` land, update labels/metrics in
-   `showcase/src/data/samples.ts` (models are described there as
-   "1,000 steps", "2,000 steps", "best dev loss at step 4,900").
+   `showcase/src/data/samples.ts` and re-export audio from the new runs.
+3. (Optional) The WandB tables also contain 7 speaker-0002 utterances per
+   model that could be added as extra samples if desired.
 
 ## Verification already done (no need to redo)
 

@@ -36,16 +36,23 @@ In-app keys: `d` toggles dark mode (handled by `src/components/theme-provider.ts
 | `src/App.tsx` | Entire UI: sidebar, transcript, reference player, model toggle + player, eval table |
 | `src/components/audio-player.tsx` | Custom `<audio>` player. `preservePosition` carries playback time + play state across `src` changes (the core A/B-comparison feature — don't break it) |
 | `src/hooks/use-audio-availability.ts` | HEAD-probes each expected wav and checks content-type to detect which files exist |
-| `public/audio/reference/` | The 5 ground-truth wavs (committed) |
-| `public/audio/{base,finetune_lr_2e-5,finetune_lr_5e-6,finetune_lr_1e-5}/` | Model outputs; empty until generated |
+| `public/audio/prompt/` | The 5 voice prompts — the cloning input the models heard (a different utterance from the same speaker) |
+| `public/audio/reference/` | The 5 ground-truth wavs of the target lines |
+| `public/audio/{base,finetune_lr_2e-5,finetune_lr_5e-6,finetune_lr_1e-5}/` | Generated model outputs (5 wavs each) |
 | `wrangler.jsonc` | Workers config (assets-only, SPA fallback) |
 
 ## Audio file convention
 
-Model outputs are wavs named exactly after the utterance id, e.g.
-`public/audio/base/0105.111124.050515.0394.wav`. No code change is needed when
-adding files: the availability hook detects them at load time and enables the
-corresponding model toggle. Missing files show as disabled toggles.
+All wavs are named exactly after the dataset utterance id, e.g.
+`public/audio/base/0105.111124.050515.0394.wav`. Prompt files use the
+*prompt's own* utterance id (e.g. `…0396.wav` is the prompt for target
+`…0394`); the target→prompt mapping is `promptId` in `src/data/samples.ts`.
+The generated wavs were exported from the WandB evaluation tables of the
+Kaggle runs (`evaluation_audio_examples` table: `base` + `finetuned` =
+1000-step LR 2e-5; `finetune_evaluation_audio_examples` table:
+`finetuned_2000` = LR 5e-6, `finetuned_best` = step-4900 LR 1e-5).
+No code change is needed when swapping files: the availability hook detects
+them at load time and enables the corresponding model toggle.
 
 ## Gotchas
 

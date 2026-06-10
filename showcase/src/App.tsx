@@ -23,6 +23,7 @@ import {
   MODELS,
   SAMPLES,
   modelUrl,
+  promptUrl,
   referenceUrl,
   type ModelInfo,
   type Sample,
@@ -297,14 +298,36 @@ export function App() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Reference recording</CardTitle>
+                <CardTitle>Speaker audio</CardTitle>
                 <CardDescription>
-                  Ground-truth dataset audio of the target speaker — the voice
-                  the models try to clone.
+                  What the models were given, and what the real speaker
+                  actually sounds like reading the line.
                 </CardDescription>
               </CardHeader>
-              <CardContent>
-                <AudioPlayer src={referenceUrl(sample)} />
+              <CardContent className="flex flex-col gap-5">
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <h3 className="text-sm font-medium">Voice prompt</h3>
+                    <span className="text-xs text-muted-foreground">
+                      the cloning input the models heard — a different line
+                      from the same speaker
+                    </span>
+                  </div>
+                  <AudioPlayer src={promptUrl(sample)} />
+                  <p className="text-xs italic text-muted-foreground">
+                    “{sample.promptText}”
+                  </p>
+                </div>
+                <Separator />
+                <div className="flex flex-col gap-2">
+                  <div className="flex flex-wrap items-baseline gap-x-2">
+                    <h3 className="text-sm font-medium">Ground truth</h3>
+                    <span className="text-xs text-muted-foreground">
+                      the real recording of the line above
+                    </span>
+                  </div>
+                  <AudioPlayer src={referenceUrl(sample)} />
+                </div>
               </CardContent>
             </Card>
 
