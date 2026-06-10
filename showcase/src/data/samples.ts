@@ -100,6 +100,57 @@ export const SAMPLES: Sample[] = [
     promptText:
       "Kung sinabing lumikas mula sa danger zone, sumunod, para sa ikabubuti ng iyong kalusugan.",
   },
+  // Single-word utterances from speaker 0002 (Filipino kinship terms) —
+  // short word-level cloning tests from the same WandB evaluation tables.
+  {
+    id: "0002.110816.100658.0003",
+    speaker: "0002",
+    text: "diko",
+    promptId: "0002.110816.100658.0004",
+    promptText: "bunso",
+  },
+  {
+    id: "0002.110816.100658.0004",
+    speaker: "0002",
+    text: "bunso",
+    promptId: "0002.110816.100658.0005",
+    promptText: "amang",
+  },
+  {
+    id: "0002.110816.100658.0005",
+    speaker: "0002",
+    text: "amang",
+    promptId: "0002.110816.100658.0007",
+    promptText: "katambal",
+  },
+  {
+    id: "0002.110816.100658.0007",
+    speaker: "0002",
+    text: "katambal",
+    promptId: "0002.110816.100658.0008",
+    promptText: "katukayo",
+  },
+  {
+    id: "0002.110816.100658.0008",
+    speaker: "0002",
+    text: "katukayo",
+    promptId: "0002.110816.100658.0009",
+    promptText: "kaibigan",
+  },
+  {
+    id: "0002.110816.100658.0009",
+    speaker: "0002",
+    text: "kaibigan",
+    promptId: "0002.110816.100658.0010",
+    promptText: "kinakapatid",
+  },
+  {
+    id: "0002.110816.100658.0010",
+    speaker: "0002",
+    text: "kinakapatid",
+    promptId: "0002.110816.100658.0011",
+    promptText: "kapitbahay",
+  },
 ]
 
 export function referenceUrl(sample: Sample) {

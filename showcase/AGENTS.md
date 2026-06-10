@@ -2,7 +2,8 @@
 
 Listening-test web app comparing voice-clone outputs of the base OmniVoice
 checkpoint vs. three fine-tuned learning-rate variants (LR 2e-5, LR 5e-6,
-LR 1e-5) on five PLD Filipino test utterances. Part of the parent research
+LR 1e-5) on twelve PLD Filipino test utterances (5 sentences from different
+speakers + 7 single words from speaker 0002). Part of the parent research
 project (see `../moc.md` and `../progress/2026-06-11-showcase-web-app.md`).
 
 ## Stack
@@ -26,19 +27,19 @@ npx shadcn@latest add <component>   # add more shadcn components
 ```
 
 In-app keys: `d` toggles dark mode (handled by `src/components/theme-provider.tsx`),
-`1`–`4` switch model outputs while listening.
+`1` selects ground truth and `2`–`5` the model outputs while listening.
 
 ## File map
 
 | Path | Purpose |
 | --- | --- |
-| `src/data/samples.ts` | Single source of truth: the 5 samples + transcripts, the 4 models (labels, audio dirs, WER/SIM-o/UTMOS metrics), URL helpers |
-| `src/App.tsx` | Entire UI: sidebar, transcript, reference player, model toggle + player, eval table |
+| `src/data/samples.ts` | Single source of truth: the 12 samples + transcripts + prompt mapping, the 4 models (labels, audio dirs, WER/SIM-o/UTMOS metrics), URL helpers |
+| `src/App.tsx` | Entire UI: how-it-works steps, sidebar, target text, voice-prompt card, compare panel (ground truth + models in one toggle), eval table |
 | `src/components/audio-player.tsx` | Custom `<audio>` player. `preservePosition` carries playback time + play state across `src` changes (the core A/B-comparison feature — don't break it) |
 | `src/hooks/use-audio-availability.ts` | HEAD-probes each expected wav and checks content-type to detect which files exist |
-| `public/audio/prompt/` | The 5 voice prompts — the cloning input the models heard (a different utterance from the same speaker) |
-| `public/audio/reference/` | The 5 ground-truth wavs of the target lines |
-| `public/audio/{base,finetune_lr_2e-5,finetune_lr_5e-6,finetune_lr_1e-5}/` | Generated model outputs (5 wavs each) |
+| `public/audio/prompt/` | The 12 voice prompts — the cloning input the models heard (a different utterance from the same speaker) |
+| `public/audio/reference/` | The 12 ground-truth wavs of the target lines |
+| `public/audio/{base,finetune_lr_2e-5,finetune_lr_5e-6,finetune_lr_1e-5}/` | Generated model outputs (12 wavs each) |
 | `wrangler.jsonc` | Workers config (assets-only, SPA fallback) |
 
 ## Audio file convention

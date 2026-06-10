@@ -2,7 +2,8 @@
 
 A small listening-test web app comparing voice-clone outputs from the base
 OmniVoice checkpoint and the three fine-tuned learning-rate variants
-(LR 2e-5, LR 5e-6, LR 1e-5) on five PLD Filipino test utterances.
+(LR 2e-5, LR 5e-6, LR 1e-5) on twelve PLD Filipino test utterances
+(5 sentences from different speakers + 7 single words from speaker 0002).
 
 Built with Vite + React + shadcn/ui (monochrome rhea theme), deployed as a
 Cloudflare Workers assets-only project.
@@ -15,9 +16,9 @@ npm run dev          # Vite dev server
 npm run preview:cf   # build + wrangler dev (serves the production build)
 ```
 
-Press `d` in the app to toggle dark mode. Keys `1`–`4` switch between model
-outputs while listening; playback position carries over so renditions can be
-compared at the same point in the utterance.
+Press `d` in the app to toggle dark mode. Key `1` selects the ground truth and
+`2`–`5` the model outputs while listening; playback position carries over so
+renditions can be compared at the same point in the utterance.
 
 ## Audio files
 

@@ -34,6 +34,8 @@ const ALL_MODEL_URLS = SAMPLES.flatMap((sample) =>
   MODELS.map((model) => modelUrl(model, sample))
 )
 
+const GROUND_TRUTH_ID = "truth"
+
 function MetricChip({ label, value }: { label: string; value: string }) {
   return (
     <div className="flex items-baseline gap-1.5">
@@ -43,30 +45,70 @@ function MetricChip({ label, value }: { label: string; value: string }) {
   )
 }
 
-function ModelOutputs({
+function HowItWorks() {
+  const steps = [
+    {
+      title: "The models hear a voice prompt",
+      detail:
+        "a short recording of the speaker saying a different line. This is the only audio they get.",
+    },
+    {
+      title: "They are given the target text",
+      detail:
+        "a sentence they must speak aloud in that speaker's voice. They never hear the real recording of it.",
+    },
+    {
+      title: "You compare the results",
+      detail:
+        "listen to each model's attempt next to the ground truth — the real speaker reading the same text.",
+    },
+  ]
+  return (
+    <ol className="grid gap-3 rounded-lg border bg-muted/30 p-4 sm:grid-cols-3">
+      {steps.map((step, i) => (
+        <li key={step.title} className="flex gap-3">
+          <span className="flex size-5 shrink-0 items-center justify-center rounded-full border font-mono text-[10px] text-muted-foreground">
+            {i + 1}
+          </span>
+          <p className="text-xs leading-relaxed text-muted-foreground">
+            <span className="font-medium text-foreground">{step.title}</span>{" "}
+            — {step.detail}
+          </p>
+        </li>
+      ))}
+    </ol>
+  )
+}
+
+function ComparePanel({
   sample,
   availability,
 }: {
   sample: Sample
   availability: Record<string, boolean>
 }) {
-  const [modelId, setModelId] = React.useState(MODELS[0].id)
+  const [selectedId, setSelectedId] = React.useState(GROUND_TRUTH_ID)
 
   const isAvailable = (model: ModelInfo) =>
     availability[modelUrl(model, sample)] === true
-  const availableModels = MODELS.filter(isAvailable)
-  const selected =
-    availableModels.find((m) => m.id === modelId) ?? availableModels[0]
+  const availableModel = MODELS.find((m) => m.id === selectedId && isAvailable(m))
+  const selectedModel = selectedId === GROUND_TRUTH_ID ? null : availableModel
+  // Fall back to ground truth if the chosen model has no audio for this sample.
+  const effectiveId = selectedModel ? selectedModel.id : GROUND_TRUTH_ID
+  const src = selectedModel ? modelUrl(selectedModel, sample) : referenceUrl(sample)
 
-  // Number keys 1-4 jump between available model outputs.
+  // Number keys: 1 = ground truth, 2-5 = model outputs.
   React.useEffect(() => {
     const handleKeyDown = (event: KeyboardEvent) => {
       if (event.metaKey || event.ctrlKey || event.altKey) return
       if (event.target instanceof HTMLElement && event.target.closest("input, textarea")) return
-      const index = Number.parseInt(event.key, 10) - 1
-      const model = MODELS[index]
+      if (event.key === "1") {
+        setSelectedId(GROUND_TRUTH_ID)
+        return
+      }
+      const model = MODELS[Number.parseInt(event.key, 10) - 2]
       if (model && availability[modelUrl(model, sample)]) {
-        setModelId(model.id)
+        setSelectedId(model.id)
       }
     }
     window.addEventListener("keydown", handleKeyDown)
@@ -76,11 +118,15 @@ function ModelOutputs({
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Model outputs</CardTitle>
+        <div className="flex items-center justify-between gap-2">
+          <CardTitle>Listen &amp; compare</CardTitle>
+          <Badge variant="outline">step 3 · output</Badge>
+        </div>
         <CardDescription>
-          Voice clones of the reference speaker reading the same line. Switch
-          models mid-playback to compare them at the same point in the
-          utterance.
+          Ground truth is the real speaker; the rest are AI voice clones
+          generated from the prompt and the target text. Switch while playing —
+          the position is kept, so you hear the exact same moment in a
+          different voice.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -88,10 +134,14 @@ function ModelOutputs({
           type="single"
           variant="outline"
           spacing={0}
-          value={selected?.id ?? ""}
-          onValueChange={(value) => value && setModelId(value)}
+          value={effectiveId}
+          onValueChange={(value) => value && setSelectedId(value)}
           className="w-full max-w-full overflow-x-auto"
         >
+          <ToggleGroupItem value={GROUND_TRUTH_ID} className="flex-1">
+            <span>Ground truth</span>
+            <Kbd className="ml-1.5 hidden sm:inline-flex">1</Kbd>
+          </ToggleGroupItem>
           {MODELS.map((model, index) => {
             const available = isAvailable(model)
             const item = (
@@ -102,7 +152,7 @@ function ModelOutputs({
                 className="flex-1"
               >
                 <span>{model.label}</span>
-                <Kbd className="ml-1.5 hidden sm:inline-flex">{index + 1}</Kbd>
+                <Kbd className="ml-1.5 hidden sm:inline-flex">{index + 2}</Kbd>
               </ToggleGroupItem>
             )
             if (available) return item
@@ -117,31 +167,33 @@ function ModelOutputs({
           })}
         </ToggleGroup>
 
-        {selected ? (
-          <>
-            <AudioPlayer src={modelUrl(selected, sample)} preservePosition />
-            <Separator />
-            <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
-              <span className="text-xs text-muted-foreground">{selected.detail}</span>
-              <div className="flex flex-wrap gap-x-6 gap-y-2">
-                <MetricChip
-                  label="WER"
-                  value={`${selected.metrics.wer.toFixed(2)}%`}
-                />
-                <MetricChip label="SIM-o" value={selected.metrics.simO.toFixed(3)} />
-                <MetricChip label="UTMOS" value={selected.metrics.utmos.toFixed(2)} />
-              </div>
+        <AudioPlayer src={src} preservePosition />
+        <Separator />
+        {selectedModel ? (
+          <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
+            <span className="text-xs text-muted-foreground">
+              AI-generated · {selectedModel.detail}
+            </span>
+            <div className="flex flex-wrap gap-x-6 gap-y-2">
+              <MetricChip
+                label="WER"
+                value={`${selectedModel.metrics.wer.toFixed(2)}%`}
+              />
+              <MetricChip
+                label="SIM-o"
+                value={selectedModel.metrics.simO.toFixed(3)}
+              />
+              <MetricChip
+                label="UTMOS"
+                value={selectedModel.metrics.utmos.toFixed(2)}
+              />
             </div>
-          </>
-        ) : (
-          <div className="rounded-lg border border-dashed p-6 text-center text-sm text-muted-foreground">
-            Generated samples for this utterance haven&apos;t been added yet.
-            Drop them in{" "}
-            <code className="font-mono text-xs">
-              public/audio/&lt;model&gt;/{sample.id}.wav
-            </code>{" "}
-            and they&apos;ll appear here automatically.
           </div>
+        ) : (
+          <span className="text-xs text-muted-foreground">
+            Human recording — the real speaker reading the target text. The
+            models never heard this clip.
+          </span>
         )}
       </CardContent>
     </Card>
@@ -155,8 +207,10 @@ function EvalTable() {
       <CardHeader>
         <CardTitle>Evaluation summary</CardTitle>
         <CardDescription>
-          Measured on the full PLD Filipino test split. Lower WER is better;
-          higher SIM-o (speaker similarity) and UTMOS (naturalness) are better.
+          Measured on the full PLD Filipino test split (not just the samples on
+          this page). Lower WER (intelligibility errors) is better; higher
+          SIM-o (voice similarity to the real speaker) and UTMOS (perceived
+          naturalness) are better.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -234,8 +288,8 @@ export function App() {
                   OmniVoice · Filipino Fine-tuning
                 </h1>
                 <p className="text-xs text-muted-foreground">
-                  Listening tests: base checkpoint vs. three fine-tuned
-                  learning-rate variants
+                  Can an AI clone a Filipino voice from one short recording?
+                  Compare the base model against three fine-tuned variants.
                 </p>
               </div>
             </div>
@@ -280,6 +334,8 @@ export function App() {
           </nav>
 
           <div className="flex min-w-0 flex-col gap-6">
+            <HowItWorks />
+
             <section>
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
@@ -291,6 +347,9 @@ export function App() {
                   {sample.id}
                 </span>
               </div>
+              <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
+                Target text — what every model must say
+              </h2>
               <blockquote className="text-pretty text-lg leading-relaxed">
                 “{sample.text}”
               </blockquote>
@@ -298,40 +357,26 @@ export function App() {
 
             <Card>
               <CardHeader>
-                <CardTitle>Speaker audio</CardTitle>
+                <div className="flex items-center justify-between gap-2">
+                  <CardTitle>Voice prompt</CardTitle>
+                  <Badge variant="outline">steps 1–2 · input</Badge>
+                </div>
                 <CardDescription>
-                  What the models were given, and what the real speaker
-                  actually sounds like reading the line.
+                  The only audio the models received: speaker{" "}
+                  {sample.speaker} saying a <em>different</em> line. From this
+                  clip alone, each model has to imitate the voice and speak the
+                  target text above.
                 </CardDescription>
               </CardHeader>
-              <CardContent className="flex flex-col gap-5">
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <h3 className="text-sm font-medium">Voice prompt</h3>
-                    <span className="text-xs text-muted-foreground">
-                      the cloning input the models heard — a different line
-                      from the same speaker
-                    </span>
-                  </div>
-                  <AudioPlayer src={promptUrl(sample)} />
-                  <p className="text-xs italic text-muted-foreground">
-                    “{sample.promptText}”
-                  </p>
-                </div>
-                <Separator />
-                <div className="flex flex-col gap-2">
-                  <div className="flex flex-wrap items-baseline gap-x-2">
-                    <h3 className="text-sm font-medium">Ground truth</h3>
-                    <span className="text-xs text-muted-foreground">
-                      the real recording of the line above
-                    </span>
-                  </div>
-                  <AudioPlayer src={referenceUrl(sample)} />
-                </div>
+              <CardContent className="flex flex-col gap-2">
+                <AudioPlayer src={promptUrl(sample)} />
+                <p className="text-xs italic text-muted-foreground">
+                  “{sample.promptText}”
+                </p>
               </CardContent>
             </Card>
 
-            <ModelOutputs sample={sample} availability={availability} />
+            <ComparePanel sample={sample} availability={availability} />
 
             <EvalTable />
           </div>
