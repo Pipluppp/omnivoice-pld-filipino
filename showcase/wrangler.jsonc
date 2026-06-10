@@ -1,0 +1,10 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "omnivoice-showcase",
+  "compatibility_date": "2026-05-01",
+  // Assets-only Worker: serves the Vite build output, no server code.
+  "assets": {
+    "directory": "./dist",
+    "not_found_handling": "single-page-application"
+  }
+}
