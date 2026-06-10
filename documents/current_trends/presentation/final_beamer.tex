@@ -1,0 +1,348 @@
+\documentclass[aspectratio=169]{beamer}
+
+\usetheme{durham}
+
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{hyperref}
+\usepackage{graphicx}
+\usepackage{tikz}
+\usepackage{pgfplots}
+\pgfplotsset{compat=1.18}
+\usetikzlibrary{arrows.meta,positioning}
+
+\title[Filipino OmniVoice Fine-Tuning]{Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech}
+\subtitle{Final Project Presentation}
+\author{}
+\institute{Current Trends}
+\date{\today}
+\setbeamertemplate{footline}{}
+
+\begin{document}
+
+\maketitle
+
+\begin{frame}{The Problem}
+  Voice cloning systems synthesize speech in a target speaker's voice from a short reference audio.
+
+  \vspace{0.6em}
+
+  \begin{itemize}
+    \item High-quality voice cloning is strongest in high-resource languages.
+    \item Filipino speech AI remains low-resource, with few open Filipino workflows.
+    \item OmniVoice supports Filipino, but with only about \textbf{7.71 hours} of Filipino in its training mixture.
+    \item The UP-DSP Philippine Languages Database holds almost \textbf{49 hours} of Filipino speech.
+  \end{itemize}
+
+  \vspace{0.6em}
+  \begin{block}{What We Did}
+    Fine-tune OmniVoice on curated Filipino speech and measure whether the adapted model is better than the base model.
+  \end{block}
+\end{frame}
+
+\begin{frame}{Background: OmniVoice}
+  \begin{columns}[T]
+    \begin{column}{0.38\textwidth}
+      \includegraphics[height=0.66\textheight,keepaspectratio]{\detokenize{../../images/omnivoice paper.png}}
+    \end{column}
+    \begin{column}{0.58\textwidth}
+      \begin{itemize}
+        \item Open-source multilingual zero-shot TTS and voice cloning model.
+        \item Supports 600+ languages, including Filipino (\texttt{fil}).
+        \item Generates discrete acoustic tokens with a masked-token (diffusion language model) process.
+        \item Provides official fine-tuning and evaluation scripts.
+        \item Practical to adapt instead of training a Filipino model from scratch.
+      \end{itemize}
+      \vspace{0.5em}
+      \small Source: Zhu et al. (2026).
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Research Question}
+  \begin{block}{Main Research Question}
+    How much does Filipino-specific fine-tuning improve OmniVoice for Filipino TTS and voice cloning across intelligibility, naturalness, and speaker similarity metrics?
+  \end{block}
+
+  \vspace{0.5em}
+
+  \begin{itemize}
+    \item Model: \texttt{k2-fsa/OmniVoice}, adapted with supervised fine-tuning.
+    \item Data: Filipino read speech from the UP-DSP Philippine Languages Database.
+    \item Compute: free Kaggle T4 GPU notebooks.
+    \item Baseline: the unmodified pretrained OmniVoice checkpoint.
+    \item Tracking: all runs logged in Weights and Biases.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Dataset: UP-DSP Philippine Languages Database}
+  \begin{columns}[T]
+    \begin{column}{0.48\textwidth}
+      \includegraphics[width=\linewidth,height=0.62\textheight,keepaspectratio]{\detokenize{../../images/up dsp philippine languages database.png}}
+    \end{column}
+    \begin{column}{0.48\textwidth}
+      \begin{itemize}
+        \item Released through Mozilla Data Collective (CC-BY-NC-4.0).
+        \item WAV audio with LOG transcript files.
+        \item Filipino subset: 135 speakers, 52,879 utterances, 48:56:36.
+        \item We used read speech only: the transcript reliably matches the audio.
+      \end{itemize}
+      \vspace{0.4em}
+      \small Source: Cajote et al. (2024).
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Data Preparation}
+  Conservative filtering: read speech only, no transcripts with digits or parentheses, no broken WAVs, clips between 1 and 15 seconds, speaker-disjoint splits.
+
+  \vspace{0.6em}
+
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{lrrrr}
+      \toprule
+      Split & Samples & Percent & Hours & Speakers \\
+      \midrule
+      Train & 33,448 & 79.1\% & 31.9 & 103 \\
+      Development & 4,506 & 10.7\% & 3.7 & 13 \\
+      Test & 4,322 & 10.2\% & 4.2 & 13 \\
+      \midrule
+      Total & 42,276 & 100\% & 39.8 & 129 \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+
+  \vspace{0.5em}
+  \small The 31.9 training hours are about \textbf{4$\times$} the Filipino hours in OmniVoice's original training mixture. Domains include news, medical sentences, stories, greetings, proverbs, and many isolated-word prompts.
+\end{frame}
+
+\begin{frame}{Pipeline}
+  \centering
+  \scriptsize
+  \begin{tikzpicture}[
+    node distance=0.45cm and 0.55cm,
+    box/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.0cm, fill=blue!6},
+    outputbox/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.0cm, fill=green!8},
+    arrow/.style={-{Latex[length=2mm]}, thick}
+  ]
+    \node[box] (a) {PLD Filipino\\WAV + LOG};
+    \node[box, right=of a] (b) {Parse and clean\\transcripts};
+    \node[box, right=of b] (c) {Speaker-disjoint\\train/dev/test};
+    \node[box, below=of c] (d) {OmniVoice JSONL\\audio + text + \texttt{fil}};
+    \node[box, left=of d] (e) {Audio tokenization\\Higgs tokenizer};
+    \node[box, left=of e] (f) {WebDataset shards\\(reused Kaggle dataset)};
+    \node[box, below=of e] (g) {Fine-tune OmniVoice\\Kaggle T4};
+    \node[outputbox, below=of g] (h) {Checkpoints};
+    \node[box, right=of h] (i) {Matched test\\inference};
+    \node[box, right=of i] (j) {WER, SIM-o,\\UTMOS};
+
+    \draw[arrow] (a) -- (b);
+    \draw[arrow] (b) -- (c);
+    \draw[arrow] (c) -- (d);
+    \draw[arrow] (d) -- (e);
+    \draw[arrow] (e) -- (f);
+    \draw[arrow] (f) |- (g);
+    \draw[arrow] (g) -- (h);
+    \draw[arrow] (h) -- (i);
+    \draw[arrow] (i) -- (j);
+  \end{tikzpicture}
+
+  \vspace{0.6em}
+  \small Audio is tokenized once into 8-codebook acoustic tokens and reused across runs; training recovers masked acoustic tokens from text, language, and prompt audio.
+\end{frame}
+
+\begin{frame}{Fine-Tuning Setup}
+  \begin{itemize}
+    \item Environment: Kaggle notebooks, 2$\times$ NVIDIA T4, FP16, SDPA attention, gradient accumulation.
+    \item Start from the pretrained \texttt{k2-fsa/OmniVoice} checkpoint.
+    \item Loss: OmniVoice's own objective, weighted cross-entropy on masked acoustic tokens.
+    \item Optimizer: AdamW, cosine learning-rate decay, 1\% warmup, seed 42.
+  \end{itemize}
+
+  \vspace{0.5em}
+
+  \begin{table}
+    \centering
+    \small
+    \begin{tabular}{llll}
+      \toprule
+      Run & Learning rate & Steps & Checkpoint policy \\
+      \midrule
+      FT-1000 & 2e-5 & 1000 & final step \\
+      FT-2000 & 5e-6 & 2000 & final step \\
+      FT-4900 & 1e-5 & 5000 & \textbf{lowest dev loss} (found at step 4900) \\
+      \bottomrule
+    \end{tabular}
+  \end{table}
+\end{frame}
+
+\begin{frame}{Training Behavior}
+  \centering
+  \includegraphics[width=0.9\linewidth,height=0.72\textheight,keepaspectratio]{\detokenize{../../images/finetunes_training_loss_together.png}}
+
+  \vspace{0.3em}
+  \small W\&B training-loss curves for the three fine-tuning runs.
+\end{frame}
+
+\begin{frame}{How We Evaluated}
+  All systems generate the same 4,322 held-out test utterances, cloning a reference voice from the same speaker (a different utterance, so the model never hears the target audio).
+
+  \vspace{0.6em}
+
+  \begin{itemize}
+    \item \textbf{WER: ``Did it say the right words?''}\\
+    Whisper-large-v3 transcribes the generated audio; transcript vs.\ target text. Lower is better.
+    \item \textbf{SIM-o: ``Does it sound like the reference speaker?''}\\
+    Cosine similarity of speaker embeddings (WavLM ECAPA-TDNN). Higher is better.
+    \item \textbf{UTMOS: ``Does it sound natural?''}\\
+    A learned mean-opinion-score predictor. Higher is better.
+  \end{itemize}
+
+  \vspace{0.4em}
+  \small Same test split, prompts, inference settings, and evaluator models for every system, so differences come from the checkpoints.
+\end{frame}
+
+\begin{frame}{Results: Main Comparison}
+  \begin{columns}[T]
+    \begin{column}{0.52\textwidth}
+      \begin{table}
+        \centering
+        \small
+        \setlength{\tabcolsep}{4pt}
+        \begin{tabular}{lrrr}
+          \toprule
+          Model & WER (\%) & SIM-o & UTMOS \\
+          \midrule
+          Base & 22.55 & 0.602 & \textbf{3.64} \\
+          FT-1000 & 20.07 & 0.610 & 3.60 \\
+          FT-2000 & 22.64 & \textbf{0.611} & 3.57 \\
+          FT-4900 & \textbf{18.52} & 0.604 & 3.61 \\
+          \bottomrule
+        \end{tabular}
+      \end{table}
+      \vspace{0.4em}
+      \small FT-4900 cuts WER by \textbf{4.03 points} (17.9\% relative) while keeping SIM-o above base.
+    \end{column}
+    \begin{column}{0.44\textwidth}
+      \begin{tikzpicture}
+        \begin{axis}[
+          ybar,
+          bar width=11pt,
+          width=\linewidth,
+          height=5.4cm,
+          ylabel={WER (\%)},
+          ymin=0, ymax=27,
+          symbolic x coords={Base, FT-1000, FT-2000, FT-4900},
+          xtick=data,
+          nodes near coords,
+          nodes near coords style={font=\tiny},
+          enlarge x limits=0.16,
+          axis lines*=left,
+          tick label style={font=\tiny},
+          label style={font=\scriptsize},
+        ]
+          \addplot+[fill=blue!35, draw=blue!60!black] coordinates {
+            (Base,22.55) (FT-1000,20.07) (FT-2000,22.64) (FT-4900,18.52)
+          };
+          \draw[red!70!black, dashed, thick]
+            (axis cs:Base,22.55) -- (axis cs:FT-4900,22.55);
+        \end{axis}
+      \end{tikzpicture}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Results: Where the Improvement Comes From}
+  \begin{columns}[T]
+    \begin{column}{0.5\textwidth}
+      \begin{tikzpicture}
+        \begin{axis}[
+          ybar,
+          bar width=5.5pt,
+          width=\linewidth,
+          height=5.6cm,
+          ylabel={Edit operations},
+          ymin=0, ymax=3700,
+          symbolic x coords={Base, FT-1000, FT-2000, FT-4900},
+          xtick=data,
+          enlarge x limits=0.16,
+          axis lines*=left,
+          legend style={font=\tiny, at={(0.5,1.02)}, anchor=south, legend columns=3, draw=none},
+          tick label style={font=\tiny},
+          label style={font=\scriptsize},
+        ]
+          \addplot+[fill=blue!40, draw=blue!60!black] coordinates {
+            (Base,2668) (FT-1000,2439) (FT-2000,3115) (FT-4900,2045)};
+          \addplot+[fill=orange!50, draw=orange!70!black] coordinates {
+            (Base,640) (FT-1000,598) (FT-2000,586) (FT-4900,603)};
+          \addplot+[fill=green!45!black!60, draw=green!30!black] coordinates {
+            (Base,2858) (FT-1000,2452) (FT-2000,2492) (FT-4900,2417)};
+          \legend{Ins., Del., Sub.}
+        \end{axis}
+      \end{tikzpicture}
+    \end{column}
+    \begin{column}{0.46\textwidth}
+      \begin{itemize}
+        \item FT-4900 wins by producing \textbf{fewer extra words} (insertions: 2,668 $\rightarrow$ 2,045) and \textbf{fewer wrong words} (substitutions: 2,858 $\rightarrow$ 2,417).
+        \item FT-2000 improved deletions and substitutions but its insertions rose to 3,115, wiping out the gain.
+        \item A run can improve one error type while worsening another.
+      \end{itemize}
+    \end{column}
+  \end{columns}
+\end{frame}
+
+\begin{frame}{Discussion}
+  \begin{itemize}
+    \item Fine-tuning helps, but \textbf{not automatically}: one of three runs ended worse than the base model on WER.
+    \item \textbf{Checkpoint selection matters}: the best model came from saving on lowest development loss, not the last step.
+    \item Development loss is a useful heuristic, but it must be \textbf{validated with downstream audio metrics}; high SIM-o alone picked the wrong model.
+    \item The base OmniVoice model is already decent in Filipino, so gains are measurable but not dramatic.
+    \item Practical lessons: tokenize once and reuse; a conservative FP16 + gradient-accumulation recipe makes T4 training feasible.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Limitations}
+  \begin{itemize}
+    \item Automatic metrics only: WER is ASR-mediated (Whisper), SIM-o depends on the speaker encoder, UTMOS is a predictor, not a listening survey.
+    \item Read speech only, with many short isolated-word prompts; says little about spontaneous speech or long-form prosody.
+    \item Filipino only; other Philippine languages in PLD were not tested.
+    \item Three learning-rate settings, not a full sweep, because of free-GPU compute limits.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Conclusion and Recommendations}
+  \begin{block}{Answer to the Research Question}
+    Filipino fine-tuning improved OmniVoice intelligibility: WER dropped from 22.55\% to 18.52\% (17.9\% relative) with speaker similarity preserved. The gain depends on training configuration and checkpoint selection.
+  \end{block}
+
+  \vspace{0.5em}
+
+  \begin{itemize}
+    \item Recommended checkpoint: \textbf{FT-4900} (1e-5, dev-loss-selected).
+    \item Next: Filipino listener study to validate the automatic metrics.
+    \item Next: more checkpoints around 1e-5; systematic checkpoint-policy comparison.
+    \item Next: curated sentence-level data to improve prosody.
+  \end{itemize}
+\end{frame}
+
+\begin{frame}{Application Use Case: Voice Cloning}
+  \centering
+  \includegraphics[width=0.94\linewidth,height=0.78\textheight,keepaspectratio]{\detokenize{../../images/app 1.png}}
+\end{frame}
+
+\begin{frame}{References}
+  \tiny
+  \begin{itemize}
+    \item Cajote, R. D., Guevara, R. C. L., Bayona, M. G. A. R., \& Lucas, C. R. G. (2024). \textit{Philippine Languages Database: A multilingual speech corpora for developing systems for Philippine spoken languages}. SIGUL 2024. \url{https://aclanthology.org/2024.sigul-1.32/}
+    \item Le, M., Vyas, A., Shi, B., Karrer, B., Sari, L., Moritz, R., Williamson, M., Manohar, V., Adi, Y., Mahadeokar, J., et al. (2023). \textit{Voicebox: Text-guided multilingual universal speech generation at scale}. NeurIPS, 36, 14005--14034.
+    \item Saeki, T., Xin, D., Nakata, W., Koriyama, T., Takamichi, S., \& Saruwatari, H. (2022). \textit{UTMOS: UTokyo-SaruLab system for VoiceMOS Challenge 2022}. Interspeech 2022. \url{https://arxiv.org/abs/2204.02152}
+    \item UP EEEI - Digital Signal Processing Laboratory. (2026). \textit{UP-DSP Philippine Languages Database}. Mozilla Data Collective. \url{https://mozilladatacollective.com/datasets/cmmxhw46c00tqnw07xyr94zjk}
+    \item Wang, C., Chen, S., Wu, Y., Zhang, Z., Zhou, L., Liu, S., et al. (2023). \textit{Neural codec language models are zero-shot text to speech synthesizers}. arXiv. \url{https://arxiv.org/abs/2301.02111}
+    \item Zhu, H., Ye, L., Kang, W., Yao, Z., Guo, L., Kuang, F., Han, Z., Zhuang, W., Lin, L., \& Povey, D. (2026). \textit{OmniVoice: Towards omnilingual zero-shot text-to-speech with diffusion language models}. arXiv. \url{https://arxiv.org/abs/2604.00688}
+    \item Weights \& Biases experiment report: \url{https://wandb.ai/duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino}
+  \end{itemize}
+\end{frame}
+
+\end{document}
