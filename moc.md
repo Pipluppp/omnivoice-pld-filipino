@@ -14,8 +14,8 @@ current objective results.
 training flow, evaluation flow, and current result table.
 
 `progress/2026-05-19-full-train-track-metrics.md` is the clearest short record
-of the final metric comparison. It states the current best checkpoint:
-`omnivoice-filipino-full-checkpoint-best`.
+of the final metric comparison. It states the current strongest checkpoint:
+`omnivoice-filipino-full-checkpoint-4900`.
 
 ## Root Project Docs
 
@@ -60,7 +60,7 @@ Data Collective page, and app screenshots used in the proposal presentation.
 mirror the scripts pasted into Kaggle notebooks.
 
 - `notebooks/omnivoice_training.py` produced the 1000-step checkpoint.
-- `notebooks/omnivoice_training_best_eval.py` saved the best checkpoint by
+- `notebooks/omnivoice_training_best_eval.py` saved the selected checkpoint by
   development loss.
 - `notebooks/tokenize_dataset.py` handles tokenization in Kaggle.
 - `notebooks/omnivoice_evaluation_metrics.py` evaluates the base model and the
@@ -152,9 +152,9 @@ The main evaluated systems are:
 | Base OmniVoice | `k2-fsa/OmniVoice` | N/A | pretrained base | 22.55 | 0.602 | 3.64 |
 | Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000` | `2e-5` | 1000 steps | 20.07 | 0.610 | 3.60 |
 | Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000` | `5e-6` | 2000 steps | 22.64 | 0.611 | 3.57 |
-| Fine-tuned best | `omnivoice-filipino-full-checkpoint-best` | `1e-5` | best eval loss at step 4900 | 18.52 | 0.604 | 3.61 |
+| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900` | `1e-5` | lowest eval loss at step 4900 | 18.52 | 0.604 | 3.61 |
 
-The current best model is `omnivoice-filipino-full-checkpoint-best`. It has the
+The current strongest model is `omnivoice-filipino-full-checkpoint-4900`. It has the
 lowest WER, reducing the base model from 22.55% to 18.52%. It does not have the
 highest SIM-o or UTMOS, but SIM-o stays slightly above the base model and UTMOS
 stays close to the other fine-tuned checkpoints.

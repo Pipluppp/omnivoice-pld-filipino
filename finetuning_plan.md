@@ -542,18 +542,18 @@ If not:
 
 ### Current Full Test-Set Results
 
-The base model and the first 1000-step fine-tuned checkpoint were evaluated with `notebooks/omnivoice_evaluation_metrics.py`. The later 2000-step and best-development-loss checkpoints were evaluated with `notebooks/omnivoice_evaluation_metrics_finetunes.py`, which reused the base model row from the first full evaluation run because the evaluation setup stayed the same.
+The base model and the first 1000-step fine-tuned checkpoint were evaluated with `notebooks/omnivoice_evaluation_metrics.py`. The later 2000-step and 4900-step development-loss-selected checkpoints were evaluated with `notebooks/omnivoice_evaluation_metrics_finetunes.py`, which reused the base model row from the first full evaluation run because the evaluation setup stayed the same.
 
 | Model | Checkpoint / artifact | Learning rate | Selection | WER (%) | SIM-o | UTMOS |
 | --- | --- | ---: | --- | ---: | ---: | ---: |
 | Base OmniVoice | `k2-fsa/OmniVoice` | N/A | pretrained base | 22.55 | 0.602 | 3.64 |
 | Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000` | `2e-5` | 1000 steps | 20.07 | 0.610 | 3.60 |
 | Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000` | `5e-6` | 2000 steps | 22.64 | 0.611 | 3.57 |
-| Fine-tuned best | `omnivoice-filipino-full-checkpoint-best` | `1e-5` | best eval loss at step 4900 | 18.52 | 0.604 | 3.61 |
+| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900` | `1e-5` | lowest eval loss at step 4900 | 18.52 | 0.604 | 3.61 |
 
-Current best model: `omnivoice-filipino-full-checkpoint-best`.
+Current strongest model: `omnivoice-filipino-full-checkpoint-4900`.
 
-The best checkpoint reduces WER by 4.03 absolute points versus the base model, from 22.55% to 18.52%, while keeping SIM-o slightly above base. The base model still has the highest UTMOS, and the 2000-step `5e-6` checkpoint has the highest SIM-o, so the result is a trade-off. For the current research question, the best checkpoint is the 4900-step best-development-loss checkpoint because it gives the strongest intelligibility gain without a large speaker-similarity or naturalness collapse.
+The 4900-step checkpoint reduces WER by 4.03 absolute points versus the base model, from 22.55% to 18.52%, while keeping SIM-o slightly above base. The base model still has the highest UTMOS, and the 2000-step `5e-6` checkpoint has the highest SIM-o, so the result is a trade-off. For the current research question, the 4900-step checkpoint gives the strongest intelligibility gain without a large speaker-similarity or naturalness collapse.
 
 ### Human Evaluation
 

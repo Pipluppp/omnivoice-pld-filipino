@@ -1,5 +1,5 @@
 # %% [markdown] {"jupyter":{"outputs_hidden":false}}
-# # OmniVoice Filipino PLD full fine-tuning with best-eval checkpointing on Kaggle, LR 1e-5
+# # OmniVoice Filipino PLD full fine-tuning with best-eval checkpointing on Kaggle, LR 2e-5
 # This notebook-style script runs the full training workflow with metric-based checkpointing:
 # - attach the cleaned PLD JSONL/audio Kaggle Dataset;
 # - attach the Kaggle-safe pretokenized OmniVoice WebDataset shards;
@@ -25,7 +25,7 @@ from pathlib import Path
 # ## 1. Settings
 
 # %% [code] {"jupyter":{"outputs_hidden":false}}
-RUN_NAME = "full-filipino-pld-best-eval-lr-1e-5"
+RUN_NAME = "full-filipino-pld-best-eval-lr-2e-5"
 
 PLD_DATA_DIR = Path("/kaggle/input/datasets/pipluppp/pld-filipino-cleaned/data_clean")
 TOKEN_DATASET_DIR = Path(
@@ -42,11 +42,11 @@ WORK_DIR = Path("/kaggle/working/omnivoice_filipino_pld")
 TEMP_DIR = Path("/kaggle/temp/omnivoice_filipino_pld")
 MANIFEST_DIR = WORK_DIR / "manifests"
 CONFIG_DIR = WORK_DIR / "config"
-OUTPUT_DIR = WORK_DIR / "exp_full_best_eval_lr_1e_5"
-RESULTS_DIR = WORK_DIR / "results" / "full_best_eval_lr_1e_5"
+OUTPUT_DIR = WORK_DIR / "exp_full_best_eval_lr_2e_5"
+RESULTS_DIR = WORK_DIR / "results" / "full_best_eval_lr_2e_5"
 BASELINE_RESULTS_DIR = RESULTS_DIR / "base"
 FINETUNED_RESULTS_DIR = RESULTS_DIR / "finetuned"
-METRICS_DIR = WORK_DIR / "metrics" / "full_best_eval_lr_1e_5"
+METRICS_DIR = WORK_DIR / "metrics" / "full_best_eval_lr_2e_5"
 
 HF_CACHE_DIR = TEMP_DIR / "hf_cache"
 XDG_CACHE_DIR = TEMP_DIR / "xdg_cache"
@@ -57,7 +57,7 @@ GPU_IDS = "0"
 NUM_GPUS = 1
 
 TRAINING_STEPS = 5000
-LEARNING_RATE = 1e-5
+LEARNING_RATE = 2e-5
 BATCH_TOKENS = 1024
 GRADIENT_ACCUMULATION_STEPS = 8
 MAX_BATCH_SIZE = 4
@@ -88,7 +88,7 @@ WANDB_TAGS = [
     "kaggle",
     "full",
     "best-eval",
-    "lr-1e-5",
+    "lr-2e-5",
 ]
 LOG_CHECKPOINT_ARTIFACT_TO_WANDB = True
 LOG_AUDIO_TO_WANDB = True

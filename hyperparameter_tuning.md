@@ -13,18 +13,28 @@ The guidance below is grounded in OmniVoice's own fine-tuning configs and docs, 
 After the initial 1000-step run, two more fine-tuned checkpoints were evaluated on the same full PLD Filipino test split:
 
 - `omnivoice-filipino-full-checkpoint-2000`: 2000 steps, learning rate `5e-6`.
-- `omnivoice-filipino-full-checkpoint-best`: 5000-step run with best checkpoint selected by development loss, learning rate `1e-5`, best step 4900.
+- `omnivoice-filipino-full-checkpoint-4900`: 5000-step run with the checkpoint selected by lowest development loss, learning rate `1e-5`, selected step 4900.
 
 | Model | Learning rate | Selection | WER (%) | WER delta vs base | SIM-o | UTMOS |
 | --- | ---: | --- | ---: | ---: | ---: | ---: |
 | Base OmniVoice | N/A | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
 | Fine-tuned 1000 | `2e-5` | 1000 steps | 20.07 | -2.48 | 0.610 | 3.60 |
 | Fine-tuned 2000 | `5e-6` | 2000 steps | 22.64 | +0.09 | 0.611 | 3.57 |
-| Fine-tuned best | `1e-5` | best eval loss at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Fine-tuned 4900 | `1e-5` | lowest eval loss at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
 
-Current tuning conclusion: the `1e-5` longer run with best-development-loss checkpointing is the best model so far. It gives the lowest WER, improving the base model by 4.03 absolute points, while preserving SIM-o slightly above base. The `5e-6` 2000-step run is not better overall: it has the highest SIM-o but loses the WER gain and drops UTMOS.
+Current tuning conclusion: the `1e-5` longer run with development-loss checkpointing is the strongest model so far. It gives the lowest WER, improving the base model by 4.03 absolute points, while preserving SIM-o slightly above base. The `5e-6` 2000-step run is not better overall: it has the highest SIM-o but loses the WER gain and drops UTMOS.
 
 This means lower learning rate alone was not enough. The useful change appears to be the combination of a repository-aligned `1e-5` learning rate, longer training, and checkpoint selection by development loss.
+
+However, the current table is not a clean learning-rate comparison because the 1000-step and 2000-step runs used final-step checkpoints, while the 4900-step result came from a 5000-step run selected by lowest development loss. For the paper discussion, treat the table above as project history. The cleaner comparison should rerun the same 5000-step best-development-loss checkpointing setup at:
+
+| Controlled run | Learning rate | Steps | Checkpoint policy | Notebook |
+| --- | ---: | ---: | --- | --- |
+| Best-eval LR 1e-5 | `1e-5` | 5000 | lowest dev loss | `notebooks/omnivoice_training_best_eval.py` |
+| Best-eval LR 2e-5 | `2e-5` | 5000 | lowest dev loss | `notebooks/omnivoice_training_best_eval_lr_2e_5.py` |
+| Best-eval LR 5e-6 | `5e-6` | 5000 | lowest dev loss | `notebooks/omnivoice_training_best_eval_lr_5e_6.py` |
+
+After these reruns, compare WER, SIM-o, and UTMOS only across the selected best checkpoints. That will let the discussion attribute differences mostly to learning rate instead of checkpoint policy or training duration.
 
 ## Current Kaggle Baseline
 

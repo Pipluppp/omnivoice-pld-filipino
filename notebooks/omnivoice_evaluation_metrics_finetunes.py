@@ -25,8 +25,8 @@ from typing import Any
 
 # %% [markdown] {"jupyter":{"outputs_hidden":false}}
 # ## 1. Settings
-# `FINETUNE_EVAL_TARGETS` contains the two new W&B model artifacts from the
-# later full-training runs. Each artifact should point to a complete Hugging
+# `FINETUNE_EVAL_TARGETS` contains the controlled best-eval W&B model artifacts
+# for the learning-rate sweep. Each artifact should point to a complete Hugging
 # Face-style checkpoint folder containing `config.json`, tokenizer files, and
 # model weights. The base reference metrics below came from the previous full
 # evaluation run and are included only for comparison, not recomputed here.
@@ -81,7 +81,8 @@ WANDB_TAGS = [
     "kaggle",
     "evaluation",
     "full-test",
-    "finetune-comparison",
+    "controlled-lr-sweep",
+    "best-eval",
 ]
 WANDB_EVAL_RUN_ID = os.environ.get("WANDB_FINETUNE_EVAL_RUN_ID") or (
     f"omnivoice-fil-finetune-eval-{uuid.uuid4().hex[:8]}"
@@ -103,31 +104,43 @@ BASE_REFERENCE_METRICS = {
     "notes": "Base model metrics reused from omnivoice_evaluation_metrics.py full run.",
 }
 
-# Add one item per fine-tuned checkpoint. These two rows are the only models
-# evaluated by this notebook; the base model is not synthesized again.
+# Add one item per controlled fine-tuned checkpoint. These rows are the only
+# models evaluated by this notebook; the base model is not synthesized again.
 FINETUNE_EVAL_TARGETS: list[dict[str, Any]] = [
     {
-        "label": "finetuned_2000",
+        "label": "best_eval_lr_1e_5",
         "wandb_artifact": (
             f"{WANDB_ENTITY}/{WANDB_PROJECT}/"
-            "omnivoice-filipino-full-checkpoint-2000:latest"
+            "omnivoice-full-filipino-pld-best-eval-lr-1e-5-checkpoint-best:latest"
         ),
         "local_path": None,
         "notes": (
-            "Run full-filipino-pld, 2000 training steps, checkpoint-2000, "
-            "learning_rate=0.000005."
+            "Controlled 5000-step best-development-loss checkpointing run, "
+            "learning_rate=0.00001."
         ),
     },
     {
-        "label": "finetuned_best",
+        "label": "best_eval_lr_2e_5",
         "wandb_artifact": (
             f"{WANDB_ENTITY}/{WANDB_PROJECT}/"
-            "omnivoice-filipino-full-checkpoint-best:latest"
+            "omnivoice-full-filipino-pld-best-eval-lr-2e-5-checkpoint-best:latest"
         ),
         "local_path": None,
         "notes": (
-            "Run full-filipino-pld-best-eval, checkpoint-best selected by "
-            "best_eval_loss=4.1618266105651855 at step 4900."
+            "Controlled 5000-step best-development-loss checkpointing run, "
+            "learning_rate=0.00002."
+        ),
+    },
+    {
+        "label": "best_eval_lr_5e_6",
+        "wandb_artifact": (
+            f"{WANDB_ENTITY}/{WANDB_PROJECT}/"
+            "omnivoice-full-filipino-pld-best-eval-lr-5e-6-checkpoint-best:latest"
+        ),
+        "local_path": None,
+        "notes": (
+            "Controlled 5000-step best-development-loss checkpointing run, "
+            "learning_rate=0.000005."
         ),
     },
 ]

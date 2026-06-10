@@ -288,9 +288,9 @@ Current full test-set objective results:
 | Base OmniVoice | `k2-fsa/OmniVoice` | 22.55 | 0.00 | 0.602 | 3.64 |
 | Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000`, lr `2e-5` | 20.07 | -2.48 | 0.610 | 3.60 |
 | Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000`, lr `5e-6` | 22.64 | +0.09 | 0.611 | 3.57 |
-| Fine-tuned best | `omnivoice-filipino-full-checkpoint-best`, lr `1e-5`, best eval loss at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900`, lr `1e-5`, lowest eval loss at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
 
-Current best model: `omnivoice-filipino-full-checkpoint-best`. It has the lowest WER and therefore the strongest intelligibility result. Its SIM-o remains slightly above base, while UTMOS is close to the other fine-tuned checkpoints but below the base model.
+Current strongest model: `omnivoice-filipino-full-checkpoint-4900`. It has the lowest WER and therefore the strongest intelligibility result. Its SIM-o remains slightly above base, while UTMOS is close to the other fine-tuned checkpoints but below the base model.
 
 ### 10. Package Final Outputs
 
