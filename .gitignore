@@ -21,6 +21,13 @@ data_artifacts/*
 # Agent skill caches fetched per skills-lock.json
 .agents/
 
+# Raw WandB/Kaggle artifact downloads kept local; curated wavs live in showcase/
+step-1000/
+step-1000.zip
+step-2000-and-best-eval-4900/
+step-2000-and-best-eval-4900.zip
+*wandb_export*.csv
+
 # LaTeX build intermediates; PDFs are deliverables and are intentionally tracked
 *.aux
 *.bbl
