@@ -609,13 +609,13 @@ Towards Omnilingual Zero-Shot Text-to-Speech with Diffusion Language Models.
 arXiv preprint arXiv:2604.00688 (2026). https://arxiv.org/abs/2604.00688
 Bandojo et al.
 A
-Final Metric Comparison Figure
-B
-Fine-Tuning Run Record
+Supplementary Figures
 The full interactive experiment report is available in the project’s
-W&B workspace (footnote in Section 3.3).
-C
-Generated Test Sample Tables
+W&B workspace (footnote in Section 3.3). Figure 4 shows the final
+metric comparison across all three evaluation metrics, Figure 5
+shows the W&B record of the recommended learning-rate 1e-5 run,
+and Figures 6 and 7 show the W&B generated-test-sample tables
+for the base model and the recommended fine-tuned checkpoint.
 Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
 Figure 4: WER, SIM-o, and UTMOS for the final controlled comparison on the full PLD Filipino test split.
 Figure 5: W&B run screenshot for the 5000-step fine-tuning run at learning rate 1e-5, whose best-development-loss checkpoint

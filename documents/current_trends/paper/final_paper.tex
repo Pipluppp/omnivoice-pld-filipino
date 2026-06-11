@@ -365,8 +365,10 @@ Three directions follow. First, a Filipino listener study should validate whethe
 
 \appendix
 
-\section{Final Metric Comparison Figure}
-\label{app:ct-final-metrics}
+\section{Supplementary Figures}
+\label{app:ct-supplementary}
+
+The full interactive experiment report is available in the project's W\&B workspace (footnote in Section 3.3). Figure~\ref{fig:ct-final-four-model-metrics} shows the final metric comparison across all three evaluation metrics, Figure~\ref{fig:ct-step-5000-lr-1e-5} shows the W\&B record of the recommended learning-rate 1e-5 run, and Figures~\ref{fig:ct-base-test-samples} and~\ref{fig:ct-finetune-5000-test-samples} show the W\&B generated-test-sample tables for the base model and the recommended fine-tuned checkpoint.
 
 \begin{figure*}[t]
   \centering
@@ -375,20 +377,12 @@ Three directions follow. First, a Filipino listener study should validate whethe
   \label{fig:ct-final-four-model-metrics}
 \end{figure*}
 
-\section{Fine-Tuning Run Record}
-\label{app:ct-finetune-run-screens}
-
-The full interactive experiment report is available in the project's W\&B workspace (footnote in Section 3.3).
-
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/step 5000 lr 1e-5.png}}
   \caption{W\&B run screenshot for the 5000-step fine-tuning run at learning rate 1e-5, whose best-development-loss checkpoint (step 4900) is the recommended model.}
   \label{fig:ct-step-5000-lr-1e-5}
 \end{figure*}
-
-\section{Generated Test Sample Tables}
-\label{app:ct-sample-tables}
 
 \begin{figure*}[t]
   \centering
