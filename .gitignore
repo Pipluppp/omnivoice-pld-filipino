@@ -44,6 +44,8 @@ eval-2e-5-and-5e-6/run-omnivoice-fil-new-lr-eval-892960a1-finetune_evaluation_au
 *.synctex.gz
 *.toc
 *.xdv
+# Evaluation metric logs are evidence, not LaTeX build noise — keep them tracked
+!eval-2e-5-and-5e-6/metric_logs/*.log
 
 # OS/editor noise
 .DS_Store
