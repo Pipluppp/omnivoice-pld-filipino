@@ -85,9 +85,12 @@ Done since the first write-up:
 1. (Optional) Bump `compatibility_date` in `wrangler.jsonc` — pinned to
    `2026-05-01` because wrangler 4.86's local runtime rejected newer dates;
    upgrading wrangler lifts this.
-2. (Optional) If the controlled 5000-step LR reruns from
-   `hyperparameter_tuning.md` land, update labels/metrics in
-   `showcase/src/data/samples.ts` and re-export audio from the new runs.
+2. ~~If the controlled 5000-step LR reruns land, update labels/metrics in
+   `showcase/src/data/samples.ts` and re-export audio from the new runs.~~
+   **Done (later on 2026-06-11):** metrics/labels updated to the controlled
+   best-eval checkpoints and the `finetune_lr_2e-5` / `finetune_lr_5e-6` wavs
+   replaced with exports from `eval-2e-5-and-5e-6/`
+   (see `2026-06-11-controlled-new-lr-eval.md`). Redeployed.
 3. (Optional) The WandB tables also contain 7 speaker-0002 utterances per
    model that could be added as extra samples if desired.
 

@@ -1,0 +1,44 @@
+[
+  {
+    "model_label": "base_reference",
+    "wer_percent": 22.55,
+    "wer_insertions": 2668.0,
+    "wer_deletions": 640.0,
+    "wer_substitutions": 2858.0,
+    "wer_words": 27342.0,
+    "sim_o": 0.602,
+    "utmos": 3.64,
+    "source": "previous_full_eval",
+    "notes": "Base model metrics reused from omnivoice_evaluation_metrics.py full run."
+  },
+  {
+    "model_label": "best_eval_lr_2e_5",
+    "source": "current_eval",
+    "wandb_artifact": "duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/omnivoice-full-filipino-pld-best-eval-lr-2e-5-checkpoint-best:v0",
+    "local_path": null,
+    "checkpoint_path": "/kaggle/temp/omnivoice_filipino_pld_new_lr_eval/work/wandb_checkpoint_artifacts/best_eval_lr_2e_5",
+    "notes": "Controlled 5000-step best-development-loss checkpointing run, learning_rate=0.00002.",
+    "wer_percent": 18.83,
+    "wer_insertions": 2156.0,
+    "wer_deletions": 604.0,
+    "wer_substitutions": 2392.0,
+    "wer_words": 27354.0,
+    "sim_o": 0.583,
+    "utmos": 3.61
+  },
+  {
+    "model_label": "best_eval_lr_5e_6",
+    "source": "current_eval",
+    "wandb_artifact": "duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/omnivoice-full-filipino-pld-best-eval-lr-5e-6-checkpoint-best:v0",
+    "local_path": null,
+    "checkpoint_path": "/kaggle/temp/omnivoice_filipino_pld_new_lr_eval/work/wandb_checkpoint_artifacts/best_eval_lr_5e_6",
+    "notes": "Controlled 5000-step best-development-loss checkpointing run, learning_rate=0.000005.",
+    "wer_percent": 21.96,
+    "wer_insertions": 3005.0,
+    "wer_deletions": 577.0,
+    "wer_substitutions": 2426.0,
+    "wer_words": 27354.0,
+    "sim_o": 0.605,
+    "utmos": 3.6
+  }
+]

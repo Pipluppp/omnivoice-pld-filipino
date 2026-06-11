@@ -1,0 +1,4 @@
+model_label,source,wer_percent,wer_insertions,wer_deletions,wer_substitutions,wer_words,sim_o,utmos,wandb_artifact,notes
+base_reference,previous_full_eval,22.55,2668.0,640.0,2858.0,27342.0,0.602,3.64,,Base model metrics reused from omnivoice_evaluation_metrics.py full run.
+best_eval_lr_2e_5,current_eval,18.83,2156.0,604.0,2392.0,27354.0,0.583,3.61,duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/omnivoice-full-filipino-pld-best-eval-lr-2e-5-checkpoint-best:v0,"Controlled 5000-step best-development-loss checkpointing run, learning_rate=0.00002."
+best_eval_lr_5e_6,current_eval,21.96,3005.0,577.0,2426.0,27354.0,0.605,3.6,duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/omnivoice-full-filipino-pld-best-eval-lr-5e-6-checkpoint-best:v0,"Controlled 5000-step best-development-loss checkpointing run, learning_rate=0.000005."

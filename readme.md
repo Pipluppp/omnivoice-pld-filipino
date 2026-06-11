@@ -27,16 +27,20 @@ The package contains 42,276 Filipino read-speech samples, or 39.772 hours total.
 
 Filtering kept read or prompted Filipino speech only. It removed spontaneous prompts, transcripts with parentheses or digits, unreadable or empty WAV files, and clips outside the 1.0 to 15.0 second range.
 
-## Results So Far
+## Final Results
 
-The strongest current checkpoint is `omnivoice-filipino-full-checkpoint-4900`. It lowers WER from 22.55% to 18.52% on the full test set, while keeping speaker similarity slightly above the base model. The base model still has the highest UTMOS score, so the current result is an intelligibility gain with a small naturalness tradeoff.
+The completed controlled comparison evaluates the base model against three fine-tuning runs that share the same 5000-step setup and the same checkpoint policy: the development set is evaluated at fixed intervals and the checkpoint with the lowest development loss is kept. Only the learning rate differs across the three runs, so metric differences are attributable mostly to learning rate. All rows use the full 4,322-utterance speaker-disjoint PLD Filipino test split. WER measures intelligibility (lower is better), SIM-o measures speaker similarity (higher is better), and UTMOS estimates naturalness (higher is better).
 
-| Model | Checkpoint / artifact | WER (%) | SIM-o | UTMOS |
-| --- | --- | ---: | ---: | ---: |
-| Base OmniVoice | `k2-fsa/OmniVoice` | 22.55 | 0.602 | 3.64 |
-| Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000` | 20.07 | 0.610 | 3.60 |
-| Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000` | 22.64 | 0.611 | 3.57 |
-| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900` | 18.52 | 0.604 | 3.61 |
+| Model | Selection | WER (%) | WER delta vs base | SIM-o | UTMOS |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
+| Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
+
+The LR 1e-5 checkpoint (`omnivoice-filipino-full-checkpoint-4900`) remains the strongest overall: it gives the largest WER reduction, 4.03 absolute points below the base model, while keeping SIM-o slightly above base. LR 2e-5 is very close in WER at 18.83% but trades away speaker similarity (SIM-o 0.583, below base). LR 5e-6 preserves speaker similarity best among the fine-tunes (SIM-o 0.605) but only modestly improves WER. The base model keeps the highest UTMOS at 3.64, with the fine-tunes close behind at 3.60-3.61. The result is therefore an intelligibility-versus-speaker-similarity/naturalness tradeoff rather than a single-metric win, with LR 1e-5 offering the best overall balance.
+
+Earlier exploratory runs (a 1000-step LR 2e-5 run and a 2000-step LR 5e-6 run, both keeping the final-step checkpoint) are kept as project history in `progress/` and are not part of the final comparison.
 
 ## How the Work Runs
 
@@ -60,9 +64,11 @@ The usual workflow is:
 | `scripts/prepare_omnivoice_filipino.py` | Builds the cleaned OmniVoice JSONL dataset from PLD WAV and LOG files. |
 | `notebooks/` | Kaggle notebook-style Python files for tokenization, training, and evaluation. |
 | `finetuning_plan.md` | Main runbook for the OmniVoice Filipino fine-tuning workflow. |
-| `hyperparameter_tuning.md` | Notes on training settings and checkpoint comparisons. |
+| `hyperparameter_tuning.md` | Notes on training settings and the controlled learning-rate comparison. |
+| `eval-2e-5-and-5e-6/` | Final controlled evaluation artifacts for the best-eval LR 2e-5 and LR 5e-6 checkpoints (metrics, logs, manifest, figure, audio-example export). |
 | `progress/` | Run notes and metric tracking. |
 | `documents/` | Paper, presentation, figures, and related course outputs. |
+| `showcase/` | Audio comparison web app for listening to base vs fine-tuned outputs. |
 | `references/` | Source papers used by the project. |
 
 ## Rebuilding the Dataset

@@ -61,7 +61,7 @@ Salvador, Joanna Mae R.}
 \maketitle
 
 \begin{abstract}
-This study investigates Filipino adaptation of OmniVoice, a pretrained massively multilingual zero-shot text-to-speech model, using the Filipino subset of the Philippine Languages Database. Although OmniVoice already includes Filipino, the model reports only 7.71 hours of Filipino in its multilingual training mixture, leaving room to examine whether supervised Filipino fine-tuning improves generated speech. The methodology prepares paired Filipino audio and transcript data, filters read-speech utterances, converts the dataset into OmniVoice JSONL and tokenized WebDataset format, fine-tunes the pretrained checkpoint under Kaggle T4 GPU constraints, and evaluates generated audio against the base model. Training and evaluation runs are tracked in Weights and Biases to support hyperparameter comparison across learning rates, step counts, and checkpoint policies. Evaluation uses word error rate for intelligibility, objective speaker similarity for voice cloning quality, and UTMOS for predicted naturalness, with listening checks used to interpret metric changes. The strongest evaluated checkpoint is the 4900-step checkpoint from the 1e-5 learning-rate run, selected by lowest development loss, reducing WER from 22.55\% to 18.52\% while keeping objective speaker similarity slightly above the base model.
+This study investigates Filipino adaptation of OmniVoice, a pretrained massively multilingual zero-shot text-to-speech model, using the Filipino subset of the Philippine Languages Database. Although OmniVoice already includes Filipino, the model reports only 7.71 hours of Filipino in its multilingual training mixture, leaving room to examine whether supervised Filipino fine-tuning improves generated speech. The methodology prepares paired Filipino audio and transcript data, filters read-speech utterances, converts the dataset into OmniVoice JSONL and tokenized WebDataset format, fine-tunes the pretrained checkpoint under Kaggle T4 GPU constraints, and evaluates generated audio against the base model. Training and evaluation runs are tracked in Weights and Biases to support hyperparameter comparison across learning rates, step counts, and checkpoint policies. Evaluation uses word error rate for intelligibility, objective speaker similarity for voice cloning quality, and UTMOS for predicted naturalness, with listening checks used to interpret metric changes. The final controlled comparison evaluates the base model against three fine-tuning runs that share the same 5000-step budget and best-development-loss checkpoint policy and differ only in learning rate (5e-6, 1e-5, 2e-5). The 1e-5 checkpoint is the strongest overall, reducing WER from 22.55\% to 18.52\% while keeping objective speaker similarity slightly above the base model; the 2e-5 checkpoint nearly matches that intelligibility gain but lowers speaker similarity, and the 5e-6 checkpoint preserves speaker similarity best while improving WER only modestly. The results show an intelligibility-versus-speaker-similarity tradeoff governed by learning rate rather than a single-metric win.
 \end{abstract}
 
 \section{Introduction}
@@ -263,11 +263,13 @@ The fine-tuning objective follows OmniVoice's discrete masked diffusion formulat
 
 This objective is important for interpreting the training curves. The logged \texttt{train/loss} and \texttt{eval/loss} values are not waveform losses and are not directly WER, SIM-o, or UTMOS. They measure masked acoustic-token recovery under the same objective used by OmniVoice. The implementation computes per-codebook cross-entropy, averages each codebook's valid masked positions, and combines the 8 codebook losses using the configured weights \texttt{[8, 8, 6, 6, 4, 4, 2, 2]}. These larger weights on lower acoustic codebooks are consistent with the idea that earlier codebooks carry more coarse acoustic structure, while later codebooks add finer detail. The masking ratio is sampled from \texttt{[0.0, 1.0]}, matching the full-codebook random masking idea in OmniVoice, and the prompt ratio is sampled from \texttt{[0.0, 0.3]} so the model sees different amounts of reference acoustic context.
 
-Optimization also follows the OmniVoice recipe but is scaled down for Kaggle. The OmniVoice paper reports AdamW with a cosine learning-rate schedule and warmup for large-scale training on H800 GPUs \citep{omnivoice}. Our Kaggle runs used AdamW with weight decay 0.01, maximum gradient norm 1.0, seed 42, and cosine learning-rate decay after a 1\% warmup. Therefore, the effective warmup windows were 10 steps for the 1000-step run, 20 steps for the 2000-step run, and 50 steps for the 5000-step run from which the 4900-step checkpoint was selected. The learning rates were deliberately lower than OmniVoice's large-scale pretraining setting because this project updates an already pretrained checkpoint on a much smaller Filipino subset. The first run used \texttt{2e-5} for 1000 steps to test whether adaptation moved the metrics. The second used \texttt{5e-6} for 2000 steps to test a more conservative update. The third used \texttt{1e-5} for a longer 5000-step run, balancing repository guidance with the limited T4 compute budget.
+Optimization also follows the OmniVoice recipe but is scaled down for Kaggle. The OmniVoice paper reports AdamW with a cosine learning-rate schedule and warmup for large-scale training on H800 GPUs \citep{omnivoice}. Our Kaggle runs used AdamW with weight decay 0.01, maximum gradient norm 1.0, seed 42, and cosine learning-rate decay after a 1\% warmup. The learning rates were deliberately lower than OmniVoice's large-scale pretraining setting because this project updates an already pretrained checkpoint on a much smaller Filipino subset.
 
-The runs also tested two checkpoint policies. The 1000-step and 2000-step runs saved checkpoints at fixed step intervals and kept the final one. The 5000-step run instead evaluated the development set at fixed intervals and saved a checkpoint only when development loss improved. Under this policy the lowest development loss, 4.162, occurred at step 4900, so checkpoint-4900 became the selected model from that run. For comparison, the 1000-step run's development loss at its final step was 4.192. This difference is small in loss terms, which is exactly why downstream audio metrics, not loss alone, decide the final model in Section~\ref{sec:results}.
+Two preliminary runs first established the workflow: a 1000-step run at \texttt{2e-5} and a 2000-step run at \texttt{5e-6}, both keeping the final-step checkpoint. Because those runs mixed checkpoint policy, step count, and learning rate, their results could not isolate the effect of any single setting. The final comparison therefore uses three controlled runs that share the same 5000-step budget and the same checkpoint policy and differ only in learning rate: \texttt{5e-6}, \texttt{1e-5}, and \texttt{2e-5}. With the 1\% warmup, each controlled run uses 50 warmup steps.
 
-Weights and Biases is used for experiment tracking \citep{wandb}. Each training run logs configuration values, training loss, development loss, checkpoints, generated samples, and evaluation artifacts. Hyperparameter tuning compares learning rates, step counts, and checkpoint policies, including shorter 1000-step runs, 2000-step runs, and longer runs that select a checkpoint by development loss. The consolidated W\&B report for this project is available as the \href{https://wandb.ai/duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/reports/OmniVoice-PLD-Filipino-finetuning--VmlldzoxNjk0ODkyMg?accessToken=ktcztpc3ocu4gmtctis13mdubb82ec1r4rnyuxdta56tts4z5j4f965olbm0v5ka}{OmniVoice PLD Filipino fine-tuning report}. The logged runs make it possible to compare whether lower development loss corresponds to better WER, SIM-o, UTMOS, and listening quality. Selected training curves, run screenshots, and generated-audio sample tables are reproduced in Appendices~\ref{app:ml-wandb-curves}--\ref{app:ml-sample-tables}.
+All three controlled runs evaluated the development set at fixed intervals and saved a checkpoint only when development loss improved, so each run contributes its best-development-loss checkpoint to the comparison. In the \texttt{1e-5} run the lowest development loss, 4.162, occurred at step 4900, so checkpoint-4900 became that run's selected model. Differences between checkpoints are small in loss terms, which is exactly why downstream audio metrics, not loss alone, decide the final model in Section~\ref{sec:results}.
+
+Weights and Biases is used for experiment tracking \citep{wandb}. Each training run logs configuration values, training loss, development loss, checkpoints, generated samples, and evaluation artifacts. Hyperparameter tuning progressed from the preliminary exploratory runs to the controlled learning-rate comparison, with every run's selected checkpoint stored as a W\&B artifact. The consolidated W\&B report for this project is available as the \href{https://wandb.ai/duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/reports/OmniVoice-PLD-Filipino-finetuning--VmlldzoxNjk0ODkyMg?accessToken=ktcztpc3ocu4gmtctis13mdubb82ec1r4rnyuxdta56tts4z5j4f965olbm0v5ka}{OmniVoice PLD Filipino fine-tuning report}. The logged runs make it possible to compare whether lower development loss corresponds to better WER, SIM-o, UTMOS, and listening quality. Selected training curves, run screenshots, and generated-audio sample tables are reproduced in Appendices~\ref{app:ml-wandb-curves}--\ref{app:ml-sample-tables}.
 
 \begin{table}[H]
   \centering
@@ -284,11 +286,12 @@ Weights and Biases is used for experiment tracking \citep{wandb}. Each training 
     Attention & SDPA \\
     Audio tokenizer & Higgs Audio V2 tokenizer \\
     Logging & Weights and Biases \\
-    Tuning variables & Learning rate, training steps, checkpoint policy \\
+    Tuning variable & Learning rate (5e-6, 1e-5, 2e-5) \\
+    Steps per controlled run & 5000 \\
     Optimizer & AdamW \\
     LR schedule & Cosine decay with 1\% warmup \\
     Loss & Weighted cross-entropy on masked acoustic-token positions \\
-    Checkpoint strategy & Step checkpoints and development-loss-selected checkpoint \\
+    Checkpoint strategy & Best development-loss checkpoint per run \\
     \bottomrule
   \end{tabular}
   \label{tab:training-setup}
@@ -298,7 +301,7 @@ Weights and Biases is used for experiment tracking \citep{wandb}. Each training 
 
 The evaluation compares the base OmniVoice model and Filipino fine-tuned checkpoints on the same test prompts and reference voices.
 
-For each of the 4,322 test utterances, the model generates the target text while cloning a reference voice. The reference prompt is a different utterance from the same test speaker, taken as the next utterance from that speaker in the manifest, so the model never hears the audio it must reproduce. The same pairing is reused for every system. Inference uses 32 unmasking steps with batch size 2 on two T4 GPUs. The base model and the 1000-step checkpoint were measured in a first full evaluation run; a later notebook evaluated the 2000-step and 4900-step checkpoints and reused the base row, which is valid because the test split, manifests, inference parameters, and evaluator versions were unchanged.
+For each of the 4,322 test utterances, the model generates the target text while cloning a reference voice. The reference prompt is a different utterance from the same test speaker, taken as the next utterance from that speaker in the manifest, so the model never hears the audio it must reproduce. The same pairing is reused for every system. Inference uses 32 unmasking steps with batch size 2 on two T4 GPUs. The base model was measured in a first full evaluation run; later evaluation runs measured each best-development-loss fine-tuned checkpoint and reused the base row, which is valid because the test split, manifests, inference parameters, and evaluator versions were unchanged across runs.
 
 \begin{figure}[H]
   \centering
@@ -376,21 +379,21 @@ The most reliable comparison is a controlled within-study comparison rather than
 
 \subsection{Objective Metric Comparison}
 
-Table~\ref{tab:objective-results} reports the full test-set results for the base model and the three fine-tuned checkpoints, and Figure~\ref{fig:wer-chart} plots the WER comparison.
+Table~\ref{tab:objective-results} reports the full test-set results for the base model and the three controlled best-development-loss checkpoints, Figure~\ref{fig:wer-chart} plots the WER comparison, and Figure~\ref{fig:full-metric-chart} shows all three metrics side by side.
 
 \begin{table}[H]
   \centering
-  \caption{Full PLD Filipino test-set objective results. Lower WER is better; higher SIM-o and UTMOS are better. Bold marks the best value per column.}
+  \caption{Full PLD Filipino test-set objective results for the controlled comparison. All fine-tuned rows are the best-development-loss checkpoints of 5000-step runs that differ only in learning rate. Lower WER is better; higher SIM-o and UTMOS are better. Bold marks the best value per column.}
   \scriptsize
   \setlength{\tabcolsep}{3pt}
-  \begin{tabular}{p{0.31\linewidth}p{0.22\linewidth}rrrr}
+  \begin{tabular}{p{0.27\linewidth}p{0.27\linewidth}rrrr}
     \toprule
     Model & Selection & WER (\%) & $\Delta$WER & SIM-o & UTMOS \\
     \midrule
     Base OmniVoice & pretrained base & 22.55 & 0.00 & 0.602 & \textbf{3.64} \\
-    Fine-tuned, 1000 steps, lr 2e-5 & checkpoint-1000 & 20.07 & -2.48 & 0.610 & 3.60 \\
-    Fine-tuned, 2000 steps, lr 5e-6 & checkpoint-2000 & 22.64 & +0.09 & \textbf{0.611} & 3.57 \\
-    Fine-tuned, lr 1e-5 & lowest eval loss at step 4900 & \textbf{18.52} & -4.03 & 0.604 & 3.61 \\
+    Fine-tuned, lr 5e-6 & best dev loss & 21.96 & -0.59 & \textbf{0.605} & 3.60 \\
+    Fine-tuned, lr 1e-5 & best dev loss at step 4900 & \textbf{18.52} & -4.03 & 0.604 & 3.61 \\
+    Fine-tuned, lr 2e-5 & best dev loss & 18.83 & -3.72 & 0.583 & 3.61 \\
     \bottomrule
   \end{tabular}
   \label{tab:objective-results}
@@ -398,7 +401,7 @@ Table~\ref{tab:objective-results} reports the full test-set results for the base
 
 \begin{figure}[H]
   \centering
-  \caption{Test-set WER by system. The dashed line marks the base-model WER; only the 1000-step and 4900-step checkpoints fall below it.}
+  \caption{Test-set WER by system. The dashed line marks the base-model WER; all three fine-tuned checkpoints fall below it, with the 1e-5 and 2e-5 checkpoints clearly ahead.}
   \label{fig:wer-chart}
   \begin{tikzpicture}
     \begin{axis}[
@@ -408,7 +411,7 @@ Table~\ref{tab:objective-results} reports the full test-set results for the base
       height=6cm,
       ylabel={WER (\%)},
       ymin=0, ymax=27,
-      symbolic x coords={Base, FT-1000, FT-2000, FT-4900},
+      symbolic x coords={Base, FT-5e-6, FT-1e-5, FT-2e-5},
       xtick=data,
       nodes near coords,
       nodes near coords style={font=\footnotesize},
@@ -418,32 +421,39 @@ Table~\ref{tab:objective-results} reports the full test-set results for the base
       label style={font=\footnotesize},
     ]
       \addplot+[fill=blue!35, draw=blue!60!black] coordinates {
-        (Base,22.55) (FT-1000,20.07) (FT-2000,22.64) (FT-4900,18.52)
+        (Base,22.55) (FT-5e-6,21.96) (FT-1e-5,18.52) (FT-2e-5,18.83)
       };
       \draw[red!70!black, dashed, thick]
-        (axis cs:Base,22.55) -- (axis cs:FT-4900,22.55);
+        (axis cs:Base,22.55) -- (axis cs:FT-2e-5,22.55);
     \end{axis}
   \end{tikzpicture}
 \end{figure}
 
-Fine-tuning can improve Filipino intelligibility, but not every fine-tuning run improves the downstream metrics. The 1000-step checkpoint reduced WER from 22.55\% to 20.07\%, while increasing SIM-o from 0.602 to 0.610 and lowering UTMOS slightly from 3.64 to 3.60. The 2000-step checkpoint trained with a lower learning rate of 5e-6 achieved the highest SIM-o at 0.611, but its WER rose to 22.64\%, slightly worse than the base model. This indicates that better speaker similarity alone is not enough to identify the strongest model for this research question.
+\begin{figure}[H]
+  \centering
+  \caption{WER, SIM-o, and UTMOS for the final controlled comparison on the full PLD Filipino test split.}
+  \label{fig:full-metric-chart}
+  \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/final_four_model_metric_comparison.png}}
+\end{figure}
 
-The strongest checkpoint is the 4900-step checkpoint from the 1e-5 run, selected by lowest development loss. It reduced WER to 18.52\%, a 4.03 absolute point improvement over the base model and about a 17.9\% relative WER reduction. Its SIM-o of 0.604 remains slightly above the base model, while its UTMOS of 3.61 is lower than the base model but close to the other fine-tuned checkpoints. Therefore, the current strongest model is the 4900-step checkpoint because it gives the largest intelligibility improvement without a large speaker-similarity or naturalness collapse.
+Because the step budget and checkpoint policy are now identical across the fine-tuned rows, the metric differences in Table~\ref{tab:objective-results} are attributable mostly to learning rate, and they form a consistent pattern. The 1e-5 checkpoint is the strongest overall: it reduced WER to 18.52\%, a 4.03 absolute point improvement over the base model and about a 17.9\% relative WER reduction, while its SIM-o of 0.604 stays slightly above the base model's 0.602. The 2e-5 checkpoint nearly matches that intelligibility gain at 18.83\% WER, but it has the lowest SIM-o of all four systems at 0.583, the only fine-tuned value below the base model. The 5e-6 checkpoint moves least: it has the best fine-tuned SIM-o at 0.605 but improves WER by only 0.59 points.
+
+UTMOS separates the systems least. The base model keeps the highest predicted naturalness at 3.64, and the three fine-tuned checkpoints sit close together at 3.60--3.61. These UTMOS and SIM-o differences are small and should not be over-interpreted, but their direction is consistent: fine-tuning toward Filipino intelligibility costs a small amount of predicted naturalness, and pushing the learning rate to 2e-5 additionally costs speaker similarity. The comparison is therefore an intelligibility-versus-speaker-similarity tradeoff governed by learning rate rather than a single-metric win. The 1e-5 checkpoint is the recommended model because it captures nearly all of the available intelligibility gain without giving up speaker similarity.
 
 \subsection{WER Error Analysis}
 
 \begin{table}[H]
   \centering
-  \caption{WER edit-operation counts on the full PLD Filipino test set.}
+  \caption{WER edit-operation counts on the full PLD Filipino test set for the controlled comparison.}
   \small
   \begin{tabular}{lrrrr}
     \toprule
     Model & Insertions & Deletions & Substitutions & Words \\
     \midrule
     Base OmniVoice & 2,668 & 640 & 2,858 & 27,342 \\
-    Fine-tuned, 1000 steps & 2,439 & 598 & 2,452 & 27,354 \\
-    Fine-tuned, 2000 steps & 3,115 & 586 & 2,492 & 27,354 \\
-    Fine-tuned, 4900 steps & 2,045 & 603 & 2,417 & 27,354 \\
+    Fine-tuned, lr 5e-6 & 3,005 & 577 & 2,426 & 27,354 \\
+    Fine-tuned, lr 1e-5 & 2,045 & 603 & 2,417 & 27,354 \\
+    Fine-tuned, lr 2e-5 & 2,156 & 604 & 2,392 & 27,354 \\
     \bottomrule
   \end{tabular}
   \label{tab:wer-counts}
@@ -451,7 +461,7 @@ The strongest checkpoint is the 4900-step checkpoint from the 1e-5 run, selected
 
 \begin{figure}[H]
   \centering
-  \caption{Edit operations per system. The 4900-step checkpoint wins mainly by cutting insertions; the 2000-step checkpoint loses its gains to an insertion increase.}
+  \caption{Edit operations per system. The 1e-5 and 2e-5 checkpoints win mainly by cutting insertions and substitutions; the 5e-6 checkpoint loses most of its substitution gain to an insertion increase.}
   \label{fig:editops-chart}
   \begin{tikzpicture}
     \begin{axis}[
@@ -461,7 +471,7 @@ The strongest checkpoint is the 4900-step checkpoint from the 1e-5 run, selected
       height=6.2cm,
       ylabel={Edit operations (count)},
       ymin=0, ymax=3600,
-      symbolic x coords={Base, FT-1000, FT-2000, FT-4900},
+      symbolic x coords={Base, FT-5e-6, FT-1e-5, FT-2e-5},
       xtick=data,
       enlarge x limits=0.16,
       axis lines*=left,
@@ -470,35 +480,35 @@ The strongest checkpoint is the 4900-step checkpoint from the 1e-5 run, selected
       label style={font=\footnotesize},
     ]
       \addplot+[fill=blue!40, draw=blue!60!black] coordinates {
-        (Base,2668) (FT-1000,2439) (FT-2000,3115) (FT-4900,2045)};
+        (Base,2668) (FT-5e-6,3005) (FT-1e-5,2045) (FT-2e-5,2156)};
       \addplot+[fill=orange!50, draw=orange!70!black] coordinates {
-        (Base,640) (FT-1000,598) (FT-2000,586) (FT-4900,603)};
+        (Base,640) (FT-5e-6,577) (FT-1e-5,603) (FT-2e-5,604)};
       \addplot+[fill=green!45!black!60, draw=green!30!black] coordinates {
-        (Base,2858) (FT-1000,2452) (FT-2000,2492) (FT-4900,2417)};
+        (Base,2858) (FT-5e-6,2426) (FT-1e-5,2417) (FT-2e-5,2392)};
       \legend{Insertions, Deletions, Substitutions}
     \end{axis}
   \end{tikzpicture}
 \end{figure}
 
-The edit-operation counts in Table~\ref{tab:wer-counts} and Figure~\ref{fig:editops-chart} explain the model ranking. The 4900-step checkpoint reduces insertions from 2,668 to 2,045 and substitutions from 2,858 to 2,417 relative to the base model, while deletions stay near the base level. Its improvement comes from producing fewer extra words and fewer wrongly recognized words. In contrast, the 2000-step checkpoint lowers deletions and substitutions but raises insertions to 3,115, and that single increase is large enough to push its total WER above the base model. A fine-tuned model can improve one error type while worsening another, which is why aggregate WER should be read together with its components.
+The edit-operation counts in Table~\ref{tab:wer-counts} and Figure~\ref{fig:editops-chart} explain the model ranking. The 1e-5 checkpoint reduces insertions from 2,668 to 2,045 and substitutions from 2,858 to 2,417 relative to the base model, while deletions stay near the base level; its improvement comes from producing fewer extra words and fewer wrongly recognized words. The 2e-5 checkpoint follows the same pattern with slightly more insertions and slightly fewer substitutions. The 5e-6 checkpoint instead cuts substitutions to 2,426 but raises insertions to 3,005, above the base model, and that single increase absorbs most of its substitution gain. A fine-tuned model can improve one error type while worsening another, which is why aggregate WER should be read together with its components.
 
 \subsection{Development Loss versus Downstream Metrics}
 
-Development loss was used to monitor training and select checkpoints, and its relationship to downstream quality turned out to be useful but imperfect. The development-loss-selected 4900-step run did produce the lowest WER, and its best development loss (4.162) was lower than the 1000-step run's (4.192). But the 1000-step checkpoint already delivered most of a useful WER gain from a much shorter run, and the 2000-step run's high SIM-o paired with worse WER shows that no single training-time signal predicts the full metric pattern. Development loss is a good checkpoint-selection heuristic, but it must be validated with downstream audio metrics before declaring a winner.
+Development loss was used to monitor training and select each run's checkpoint, and its relationship to downstream quality turned out to be useful but incomplete. Selecting checkpoints by development loss gave every run a principled stopping point, and the selected 1e-5 checkpoint did produce the lowest WER of the study. But development loss could not have predicted the full metric pattern: the 1e-5 and 2e-5 checkpoints are separated by only 0.31 WER points yet by 0.021 SIM-o, and the 5e-6 checkpoint's insertion problem is invisible in its loss curve. Development loss is a good checkpoint-selection heuristic within a run, but checkpoints across runs must be compared with downstream audio metrics before declaring a winner.
 
-The configuration choices that mattered most were the combination of longer training, the repository-aligned 1e-5 learning rate, and saving a development-loss-selected checkpoint instead of only the last step. The 2000-step result shows that simply lowering the learning rate is not automatically safer under the same compute budget.
+Earlier exploratory runs reinforce this. A 1000-step run at 2e-5 and a 2000-step run at 5e-6, both keeping the final-step checkpoint, produced 20.07\% and 22.64\% WER respectively, the second slightly worse than the base model. Those runs mixed checkpoint policy, step count, and learning rate, which is precisely why the final comparison holds the first two constant. Under the controlled setup, both the 2e-5 and 5e-6 learning rates improved on their exploratory counterparts, showing that the 5000-step budget and best-development-loss selection contributed real gains independent of learning rate.
 
 The appendix screenshots preserve the W\&B evidence used to inspect training behavior and generated samples. Appendix~\ref{app:ml-wandb-curves} shows the combined loss curves, Appendix~\ref{app:ml-finetune-run-screens} shows the individual fine-tuning run screenshots, and Appendix~\ref{app:ml-sample-tables} shows the generated-test-sample tables.
 
 \subsection{Limitations}
 
-The completed comparison uses automatic metrics only. WER depends on the ASR model (Whisper-large-v3 decoding Tagalog), so it estimates intelligibility as that ASR system hears it; SIM-o depends on the speaker encoder; and UTMOS is a learned MOS predictor rather than a listening survey. The corpus is Filipino read speech with many short, isolated-word prompts, so the results say little about spontaneous speech, long-form prosody, or other Philippine languages. Kaggle T4 compute limits also restricted the number of hyperparameter runs, so the learning-rate comparison samples three points rather than a full sweep.
+The completed comparison uses automatic metrics only. WER depends on the ASR model (Whisper-large-v3 decoding Tagalog), so it estimates intelligibility as that ASR system hears it, and ASR for Filipino is itself imperfect; SIM-o depends on the speaker encoder; and UTMOS is a learned MOS predictor rather than a listening survey, so the small naturalness differences reported here are predictions, not human judgments. No human listener study has been conducted. The corpus is Filipino read speech with many short, isolated-word prompts, so the results say little about spontaneous speech, long-form prosody, or other Philippine languages. Kaggle T4 compute limits also restricted the number of hyperparameter runs, so the controlled learning-rate comparison samples three points rather than a full sweep, with one run per learning rate and no variance estimate across seeds.
 
 \section{Conclusion and Future Work}
 
-Supervised Filipino fine-tuning improved OmniVoice on the Philippine Languages Database test set. The strongest evaluated checkpoint, the development-loss-selected 4900-step checkpoint from the 1e-5 run, reduced WER from 22.55\% to 18.52\% while keeping SIM-o slightly above the base model. The improvement is conditional: the 2000-step run shows that a fine-tuned checkpoint can also be worse than the base model on the primary metric. Fine-tuned models must therefore be compared with downstream metrics rather than training loss, development loss, or speaker similarity alone.
+Supervised Filipino fine-tuning improved OmniVoice intelligibility on the Philippine Languages Database test set. In the controlled comparison of best-development-loss checkpoints from identical 5000-step runs, the 1e-5 checkpoint reduced WER from 22.55\% to 18.52\% while keeping SIM-o slightly above the base model; the 2e-5 checkpoint reached a similar 18.83\% WER but lowered SIM-o below base; and the 5e-6 checkpoint preserved speaker similarity best while improving WER only modestly. The base model retained the highest predicted naturalness. The learning rate therefore controls an intelligibility-versus-speaker-similarity tradeoff, and fine-tuned models must be compared with the full downstream metric pattern rather than training loss, development loss, or any single metric alone.
 
-Future work should add a Filipino listener evaluation to validate the automatic metrics, test more checkpoints around the 1e-5 learning rate, compare last-step and development-loss-selected checkpoint policies systematically, and build a verified subset of longer sentence-level utterances to test whether sentence-level training data improves Filipino prosody. The recommended checkpoint for demonstration and reporting is the 4900-step checkpoint.
+Future work should add a Filipino listener evaluation to validate the automatic metrics, sample more learning rates around 1e-5, repeat runs across seeds to estimate variance, and build a verified subset of longer sentence-level utterances to test whether sentence-level training data improves Filipino prosody. The recommended checkpoint for demonstration and reporting is the best-development-loss checkpoint of the 1e-5 run, selected at step 4900.
 
 \begin{thebibliography}{99}
 
@@ -564,7 +574,7 @@ The full interactive experiment report is available as the \href{https://wandb.a
 
 \begin{figure}[H]
   \centering
-  \caption{Combined W\&B training-loss curves for the Filipino OmniVoice fine-tuning runs.}
+  \caption{Combined W\&B training-loss curves for the Filipino OmniVoice fine-tuning runs, including the preliminary exploratory runs.}
   \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/finetunes_training_loss_together.png}}
   \label{fig:ml-finetunes-training-loss}
 \end{figure}
@@ -573,23 +583,23 @@ The full interactive experiment report is available as the \href{https://wandb.a
 
 \begin{figure}[H]
   \centering
-  \caption{W\&B run screenshot for the 1000-step fine-tuning run at learning rate 2e-5.}
+  \caption{W\&B run screenshot for the 5000-step fine-tuning run at learning rate 1e-5, whose best-development-loss checkpoint (step 4900) is the recommended model.}
+  \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/step 5000 lr 1e-5.png}}
+  \label{fig:ml-step-5000-lr-1e-5}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{W\&B run screenshot for the preliminary exploratory 1000-step run at learning rate 2e-5 (project history; not part of the controlled comparison).}
   \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/step 1000 lr 2e-5.png}}
   \label{fig:ml-step-1000-lr-2e-5}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{W\&B run screenshot for the 2000-step fine-tuning run at learning rate 5e-6.}
+  \caption{W\&B run screenshot for the preliminary exploratory 2000-step run at learning rate 5e-6 (project history; not part of the controlled comparison).}
   \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/step 2000 lr 5e-6.png}}
   \label{fig:ml-step-2000-lr-5e-6}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \caption{W\&B run screenshot for the 5000-step fine-tuning run at learning rate 1e-5.}
-  \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/step 5000 lr 1e-5.png}}
-  \label{fig:ml-step-5000-lr-1e-5}
 \end{figure}
 
 \apaappendix{app:ml-sample-tables}{Generated Test Sample Tables}
@@ -603,23 +613,23 @@ The full interactive experiment report is available as the \href{https://wandb.a
 
 \begin{figure}[H]
   \centering
-  \caption{W\&B generated-test-samples table for the 1000-step fine-tuned checkpoint.}
+  \caption{W\&B generated-test-samples table for the 5000-step learning-rate 1e-5 fine-tuning run.}
+  \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/finetune_5000_test_samples.png}}
+  \label{fig:ml-finetune-5000-test-samples}
+\end{figure}
+
+\begin{figure}[H]
+  \centering
+  \caption{W\&B generated-test-samples table for the preliminary exploratory 1000-step checkpoint (project history).}
   \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/finetune_1000_test_samples.png}}
   \label{fig:ml-finetune-1000-test-samples}
 \end{figure}
 
 \begin{figure}[H]
   \centering
-  \caption{W\&B generated-test-samples table for the 2000-step fine-tuned checkpoint.}
+  \caption{W\&B generated-test-samples table for the preliminary exploratory 2000-step checkpoint (project history).}
   \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/finetune_2000_test_samples.png}}
   \label{fig:ml-finetune-2000-test-samples}
-\end{figure}
-
-\begin{figure}[H]
-  \centering
-  \caption{W\&B generated-test-samples table for the 5000-step fine-tuning run.}
-  \includegraphics[width=0.98\linewidth,keepaspectratio]{\detokenize{../images/finetune_5000_test_samples.png}}
-  \label{fig:ml-finetune-5000-test-samples}
 \end{figure}
 
 \end{document}

@@ -540,20 +540,22 @@ If not:
 
 - Use human MOS survey.
 
-### Current Full Test-Set Results
+### Final Full Test-Set Results
 
-The base model and the first 1000-step fine-tuned checkpoint were evaluated with `notebooks/omnivoice_evaluation_metrics.py`. The later 2000-step and 4900-step development-loss-selected checkpoints were evaluated with `notebooks/omnivoice_evaluation_metrics_finetunes.py`, which reused the base model row from the first full evaluation run because the evaluation setup stayed the same.
+The completed comparison is a controlled learning-rate sweep: three 5000-step fine-tuning runs with the same best-development-loss checkpoint policy, at learning rates `1e-5`, `2e-5`, and `5e-6`, plus the pretrained base model. The base model was evaluated with `notebooks/omnivoice_evaluation_metrics.py`, the LR `1e-5` checkpoint with `notebooks/omnivoice_evaluation_metrics_finetunes.py`, and the LR `2e-5` and `5e-6` checkpoints with `notebooks/omnivoice_evaluation_metrics_new_lr_reruns.py`. Later runs reused the base model row from the first full evaluation because the test split, manifests, inference settings, evaluator models, and text normalization stayed the same. Exported artifacts for the LR `2e-5`/`5e-6` evaluation live in `eval-2e-5-and-5e-6/`.
 
-| Model | Checkpoint / artifact | Learning rate | Selection | WER (%) | SIM-o | UTMOS |
-| --- | --- | ---: | --- | ---: | ---: | ---: |
-| Base OmniVoice | `k2-fsa/OmniVoice` | N/A | pretrained base | 22.55 | 0.602 | 3.64 |
-| Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000` | `2e-5` | 1000 steps | 20.07 | 0.610 | 3.60 |
-| Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000` | `5e-6` | 2000 steps | 22.64 | 0.611 | 3.57 |
-| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900` | `1e-5` | lowest eval loss at step 4900 | 18.52 | 0.604 | 3.61 |
+| Model | Selection | WER (%) | WER delta vs base | SIM-o | UTMOS |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
+| Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
 
-Current strongest model: `omnivoice-filipino-full-checkpoint-4900`.
+Strongest overall model: the best-eval LR `1e-5` checkpoint (`omnivoice-filipino-full-checkpoint-4900`).
 
-The 4900-step checkpoint reduces WER by 4.03 absolute points versus the base model, from 22.55% to 18.52%, while keeping SIM-o slightly above base. The base model still has the highest UTMOS, and the 2000-step `5e-6` checkpoint has the highest SIM-o, so the result is a trade-off. For the current research question, the 4900-step checkpoint gives the strongest intelligibility gain without a large speaker-similarity or naturalness collapse.
+The LR `1e-5` checkpoint reduces WER by 4.03 absolute points versus the base model, from 22.55% to 18.52%, while keeping SIM-o slightly above base. LR `2e-5` nearly matches that intelligibility gain (18.83% WER) but lowers SIM-o to 0.583, the only fine-tune below base. LR `5e-6` preserves speaker similarity best among the fine-tunes (0.605) but improves WER by only 0.59 points. The base model still has the highest UTMOS (3.64), with the fine-tunes close at 3.60-3.61. The result is an intelligibility-versus-speaker-similarity/naturalness tradeoff; for the current research question, LR `1e-5` gives the strongest intelligibility gain without a speaker-similarity or naturalness collapse.
+
+Earlier exploratory final-step checkpoints (1000-step `2e-5` and 2000-step `5e-6`) predate the controlled sweep and are recorded as project history in `progress/2026-05-19-full-train-track-metrics.md`.
 
 ### Human Evaluation
 

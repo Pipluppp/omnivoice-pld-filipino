@@ -13,8 +13,9 @@ current objective results.
 `finetuning_plan.md` is the main runbook. It describes the dataset, Kaggle setup,
 training flow, evaluation flow, and current result table.
 
-`progress/2026-05-19-full-train-track-metrics.md` is the clearest short record
-of the final metric comparison. It states the current strongest checkpoint:
+`progress/2026-06-11-controlled-new-lr-eval.md` is the clearest short record
+of the final controlled learning-rate comparison. The strongest overall
+checkpoint is the best-eval LR 1e-5 model,
 `omnivoice-filipino-full-checkpoint-4900`.
 
 ## Root Project Docs
@@ -59,14 +60,21 @@ Data Collective page, and app screenshots used in the proposal presentation.
 `notebooks/` contains Kaggle notebook-style `.py` files with `# %%` cells. These
 mirror the scripts pasted into Kaggle notebooks.
 
-- `notebooks/omnivoice_training.py` produced the 1000-step checkpoint.
-- `notebooks/omnivoice_training_best_eval.py` saved the selected checkpoint by
-  development loss.
+- `notebooks/omnivoice_training.py` produced the early exploratory 1000-step
+  checkpoint.
+- `notebooks/omnivoice_training_best_eval.py` is the controlled 5000-step
+  best-development-loss run at LR `1e-5`.
+- `notebooks/omnivoice_training_best_eval_lr_2e_5.py` and
+  `notebooks/omnivoice_training_best_eval_lr_5e_6.py` repeat the same
+  controlled setup at LR `2e-5` and LR `5e-6`.
 - `notebooks/tokenize_dataset.py` handles tokenization in Kaggle.
 - `notebooks/omnivoice_evaluation_metrics.py` evaluates the base model and the
   first fine-tuned checkpoint.
 - `notebooks/omnivoice_evaluation_metrics_finetunes.py` evaluates later
   fine-tuned checkpoints and reuses the base metric row.
+- `notebooks/omnivoice_evaluation_metrics_new_lr_reruns.py` evaluates the
+  controlled best-eval LR `2e-5` and LR `5e-6` checkpoints; its exported
+  artifacts live in `eval-2e-5-and-5e-6/`.
 - `notebooks/smoke_evaluation_metrics.py` is for smaller evaluation checks.
 - `notebooks/README.md` gives a short notebook summary and metric table.
 
@@ -100,6 +108,28 @@ not the final Kaggle-ready dataset folder.
   the `.wds` repackaged version under `data/`.
 - `data_artifacts/README.md` explains the folder.
 
+## Final Evaluation Artifacts
+
+`eval-2e-5-and-5e-6/` holds the exported artifacts of the controlled
+best-eval LR `2e-5` and LR `5e-6` evaluation run
+(`full-filipino-pld-test-new-lr-rerun-eval`):
+
+- `eval-2e-5-and-5e-6/metrics/` has the metric summary as JSON, CSV, and
+  markdown.
+- `eval-2e-5-and-5e-6/metric_logs/` has the raw WER, SIM-o, and UTMOS logs.
+- `eval-2e-5-and-5e-6/figures/metric_comparison.png` is the run's metric
+  figure.
+- `eval-2e-5-and-5e-6/manifests/pld_filipino_full_test_eval.jsonl` is the
+  evaluation manifest.
+- `eval-2e-5-and-5e-6/README.md` documents provenance and maps the audio
+  examples for all four final systems.
+
+## Showcase Web App
+
+`showcase/` is the deployed audio comparison app. It plays matched voice-prompt,
+ground-truth, and generated audio for the base model and the three best-eval
+fine-tunes on 12 test utterances, with the final metric table.
+
 ## Scripts
 
 `scripts/` contains local helper scripts.
@@ -117,7 +147,11 @@ not the final Kaggle-ready dataset folder.
 - `progress/2026-05-18-omnivoice-kaggle-smoke.md` records early Kaggle
   smoke-test progress.
 - `progress/2026-05-19-full-train-track-metrics.md` records training and
-  evaluation progress after the full metric runs.
+  evaluation progress after the first full metric runs (now project history).
+- `progress/2026-06-11-showcase-web-app.md` records the audio comparison
+  showcase web app build.
+- `progress/2026-06-11-controlled-new-lr-eval.md` records the completed
+  controlled learning-rate evaluation and the final four-model comparison.
 - `progress/README.md` explains the folder.
 
 ## References and Upstream Code
@@ -145,19 +179,25 @@ Important OmniVoice reference files:
 
 ## Results
 
-The main evaluated systems are:
+The final controlled comparison evaluates the base model against three 5000-step
+best-development-loss fine-tuning runs that differ only in learning rate:
 
-| Model | Checkpoint / artifact | Learning rate | Selection | WER (%) | SIM-o | UTMOS |
-| --- | --- | ---: | --- | ---: | ---: | ---: |
-| Base OmniVoice | `k2-fsa/OmniVoice` | N/A | pretrained base | 22.55 | 0.602 | 3.64 |
-| Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000` | `2e-5` | 1000 steps | 20.07 | 0.610 | 3.60 |
-| Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000` | `5e-6` | 2000 steps | 22.64 | 0.611 | 3.57 |
-| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900` | `1e-5` | lowest eval loss at step 4900 | 18.52 | 0.604 | 3.61 |
+| Model | Selection | WER (%) | WER delta vs base | SIM-o | UTMOS |
+| --- | --- | ---: | ---: | ---: | ---: |
+| Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
+| Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
 
-The current strongest model is `omnivoice-filipino-full-checkpoint-4900`. It has the
-lowest WER, reducing the base model from 22.55% to 18.52%. It does not have the
-highest SIM-o or UTMOS, but SIM-o stays slightly above the base model and UTMOS
-stays close to the other fine-tuned checkpoints.
+The strongest overall model is the best-eval LR `1e-5` checkpoint
+(`omnivoice-filipino-full-checkpoint-4900`). It has the lowest WER, reducing the
+base model from 22.55% to 18.52%, with SIM-o slightly above base. LR `2e-5` is
+nearly as intelligible (18.83% WER) but loses speaker similarity (SIM-o 0.583),
+and LR `5e-6` keeps the best fine-tune SIM-o (0.605) with only a modest WER
+gain. The base model has the highest UTMOS (3.64), so the overall finding is an
+intelligibility-versus-speaker-similarity/naturalness tradeoff. Earlier
+exploratory final-step checkpoints (1000-step `2e-5`, 2000-step `5e-6`) are
+project history, not part of this comparison.
 
 ## Generated and Cache Files
 
@@ -185,5 +225,8 @@ Read `finetuning_plan.md` if you need to reproduce the workflow.
 Read `notebooks/README.md` and the relevant notebook-style `.py` file if you
 need to rerun training or evaluation in Kaggle.
 
-Read `progress/2026-05-19-full-train-track-metrics.md` if you only need the
+Read `progress/2026-06-11-controlled-new-lr-eval.md` if you only need the
 final metric comparison and best-model decision.
+
+Open `showcase/` (or the deployed app) if you want to listen to base versus
+fine-tuned outputs directly.

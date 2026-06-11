@@ -281,16 +281,16 @@ Metrics:
 
 The report should compare the size of the change from base to fine-tuned model, not only whether the fine-tuned model improved.
 
-Current full test-set objective results:
+Final full test-set objective results (controlled comparison; all fine-tunes use the same 5000-step run with the best-development-loss checkpoint, differing only in learning rate):
 
-| Model | Checkpoint / artifact | WER (%) | WER delta vs base | Speaker similarity (SIM-o) | UTMOS |
+| Model | Selection | WER (%) | WER delta vs base | Speaker similarity (SIM-o) | UTMOS |
 | --- | --- | ---: | ---: | ---: | ---: |
-| Base OmniVoice | `k2-fsa/OmniVoice` | 22.55 | 0.00 | 0.602 | 3.64 |
-| Fine-tuned 1000 | `omnivoice-filipino-full-checkpoint-1000`, lr `2e-5` | 20.07 | -2.48 | 0.610 | 3.60 |
-| Fine-tuned 2000 | `omnivoice-filipino-full-checkpoint-2000`, lr `5e-6` | 22.64 | +0.09 | 0.611 | 3.57 |
-| Fine-tuned 4900 | `omnivoice-filipino-full-checkpoint-4900`, lr `1e-5`, lowest eval loss at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
+| Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
 
-Current strongest model: `omnivoice-filipino-full-checkpoint-4900`. It has the lowest WER and therefore the strongest intelligibility result. Its SIM-o remains slightly above base, while UTMOS is close to the other fine-tuned checkpoints but below the base model.
+Strongest overall model: the best-eval LR `1e-5` checkpoint (`omnivoice-filipino-full-checkpoint-4900`). It has the lowest WER and therefore the strongest intelligibility result, with SIM-o slightly above base. LR `2e-5` is close in WER but drops SIM-o below base; LR `5e-6` keeps the best fine-tune SIM-o but gains little WER. The base model keeps the highest UTMOS, so the comparison should be reported as an intelligibility-versus-speaker-similarity/naturalness tradeoff, not a single-metric win.
 
 ### 10. Package Final Outputs
 

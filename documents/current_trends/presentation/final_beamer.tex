@@ -170,12 +170,15 @@
       \toprule
       Run & Learning rate & Steps & Checkpoint policy \\
       \midrule
-      FT-1000 & 2e-5 & 1000 & final step \\
-      FT-2000 & 5e-6 & 2000 & final step \\
-      FT-4900 & 1e-5 & 5000 & \textbf{lowest dev loss} (found at step 4900) \\
+      FT-5e-6 & 5e-6 & 5000 & lowest dev loss \\
+      FT-1e-5 & 1e-5 & 5000 & lowest dev loss (found at step 4900) \\
+      FT-2e-5 & 2e-5 & 5000 & lowest dev loss \\
       \bottomrule
     \end{tabular}
   \end{table}
+
+  \vspace{0.4em}
+  \small A \textbf{controlled comparison}: same steps, same checkpoint policy, only the learning rate differs. (Two earlier exploratory runs at 1000 and 2000 steps with final-step checkpoints are project history.)
 \end{frame}
 
 \begin{frame}{Training Behavior}
@@ -183,7 +186,7 @@
   \includegraphics[width=0.9\linewidth,height=0.72\textheight,keepaspectratio]{\detokenize{../../images/finetunes_training_loss_together.png}}
 
   \vspace{0.3em}
-  \small W\&B training-loss curves for the three fine-tuning runs.
+  \small W\&B training-loss curves for the fine-tuning runs, including the preliminary exploratory runs.
 \end{frame}
 
 \begin{frame}{How We Evaluated}
@@ -216,14 +219,14 @@
           Model & WER (\%) & SIM-o & UTMOS \\
           \midrule
           Base & 22.55 & 0.602 & \textbf{3.64} \\
-          FT-1000 & 20.07 & 0.610 & 3.60 \\
-          FT-2000 & 22.64 & \textbf{0.611} & 3.57 \\
-          FT-4900 & \textbf{18.52} & 0.604 & 3.61 \\
+          FT-5e-6 & 21.96 & \textbf{0.605} & 3.60 \\
+          FT-1e-5 & \textbf{18.52} & 0.604 & 3.61 \\
+          FT-2e-5 & 18.83 & 0.583 & 3.61 \\
           \bottomrule
         \end{tabular}
       \end{table}
       \vspace{0.4em}
-      \small FT-4900 cuts WER by \textbf{4.03 points} (17.9\% relative) while keeping SIM-o above base.
+      \small FT-1e-5 cuts WER by \textbf{4.03 points} (17.9\% relative) while keeping SIM-o above base. FT-2e-5 is close in WER but loses speaker similarity.
     \end{column}
     \begin{column}{0.44\textwidth}
       \begin{tikzpicture}
@@ -234,7 +237,7 @@
           height=5.4cm,
           ylabel={WER (\%)},
           ymin=0, ymax=27,
-          symbolic x coords={Base, FT-1000, FT-2000, FT-4900},
+          symbolic x coords={Base, FT-5e-6, FT-1e-5, FT-2e-5},
           xtick=data,
           nodes near coords,
           nodes near coords style={font=\tiny},
@@ -244,10 +247,10 @@
           label style={font=\scriptsize},
         ]
           \addplot+[fill=blue!35, draw=blue!60!black] coordinates {
-            (Base,22.55) (FT-1000,20.07) (FT-2000,22.64) (FT-4900,18.52)
+            (Base,22.55) (FT-5e-6,21.96) (FT-1e-5,18.52) (FT-2e-5,18.83)
           };
           \draw[red!70!black, dashed, thick]
-            (axis cs:Base,22.55) -- (axis cs:FT-4900,22.55);
+            (axis cs:Base,22.55) -- (axis cs:FT-2e-5,22.55);
         \end{axis}
       \end{tikzpicture}
     \end{column}
@@ -265,7 +268,7 @@
           height=5.6cm,
           ylabel={Edit operations},
           ymin=0, ymax=3700,
-          symbolic x coords={Base, FT-1000, FT-2000, FT-4900},
+          symbolic x coords={Base, FT-5e-6, FT-1e-5, FT-2e-5},
           xtick=data,
           enlarge x limits=0.16,
           axis lines*=left,
@@ -274,19 +277,20 @@
           label style={font=\scriptsize},
         ]
           \addplot+[fill=blue!40, draw=blue!60!black] coordinates {
-            (Base,2668) (FT-1000,2439) (FT-2000,3115) (FT-4900,2045)};
+            (Base,2668) (FT-5e-6,3005) (FT-1e-5,2045) (FT-2e-5,2156)};
           \addplot+[fill=orange!50, draw=orange!70!black] coordinates {
-            (Base,640) (FT-1000,598) (FT-2000,586) (FT-4900,603)};
+            (Base,640) (FT-5e-6,577) (FT-1e-5,603) (FT-2e-5,604)};
           \addplot+[fill=green!45!black!60, draw=green!30!black] coordinates {
-            (Base,2858) (FT-1000,2452) (FT-2000,2492) (FT-4900,2417)};
+            (Base,2858) (FT-5e-6,2426) (FT-1e-5,2417) (FT-2e-5,2392)};
           \legend{Ins., Del., Sub.}
         \end{axis}
       \end{tikzpicture}
     \end{column}
     \begin{column}{0.46\textwidth}
       \begin{itemize}
-        \item FT-4900 wins by producing \textbf{fewer extra words} (insertions: 2,668 $\rightarrow$ 2,045) and \textbf{fewer wrong words} (substitutions: 2,858 $\rightarrow$ 2,417).
-        \item FT-2000 improved deletions and substitutions but its insertions rose to 3,115, wiping out the gain.
+        \item FT-1e-5 wins by producing \textbf{fewer extra words} (insertions: 2,668 $\rightarrow$ 2,045) and \textbf{fewer wrong words} (substitutions: 2,858 $\rightarrow$ 2,417).
+        \item FT-2e-5 shows the same pattern, slightly behind on insertions.
+        \item FT-5e-6 cut substitutions but its insertions rose to 3,005, absorbing most of the gain.
         \item A run can improve one error type while worsening another.
       \end{itemize}
     \end{column}
@@ -295,10 +299,10 @@
 
 \begin{frame}{Discussion}
   \begin{itemize}
-    \item Fine-tuning helps, but \textbf{not automatically}: one of three runs ended worse than the base model on WER.
-    \item \textbf{Checkpoint selection matters}: the best model came from saving on lowest development loss, not the last step.
-    \item Development loss is a useful heuristic, but it must be \textbf{validated with downstream audio metrics}; high SIM-o alone picked the wrong model.
-    \item The base OmniVoice model is already decent in Filipino, so gains are measurable but not dramatic.
+    \item The learning rate controls a \textbf{tradeoff}: 1e-5 and 2e-5 buy intelligibility; 5e-6 stays closest to the base model's speaker similarity.
+    \item FT-2e-5 shows the cost of pushing harder: nearly the same WER as FT-1e-5, but the \textbf{only SIM-o below base} (0.583).
+    \item The base model keeps the highest UTMOS (3.64); fine-tunes are close at 3.60--3.61 --- a small, consistent naturalness cost.
+    \item No single metric picks the winner; FT-1e-5 wins on the \textbf{overall pattern}: nearly all the WER gain with SIM-o preserved.
     \item Practical lessons: tokenize once and reuse; a conservative FP16 + gradient-accumulation recipe makes T4 training feasible.
   \end{itemize}
 \end{frame}
@@ -314,15 +318,15 @@
 
 \begin{frame}{Conclusion and Recommendations}
   \begin{block}{Answer to the Research Question}
-    Filipino fine-tuning improved OmniVoice intelligibility: WER dropped from 22.55\% to 18.52\% (17.9\% relative) with speaker similarity preserved. The gain depends on training configuration and checkpoint selection.
+    Filipino fine-tuning improved OmniVoice intelligibility: WER dropped from 22.55\% to 18.52\% (17.9\% relative) with speaker similarity preserved. The learning rate controls an intelligibility-versus-speaker-similarity tradeoff; no setting wins every metric.
   \end{block}
 
   \vspace{0.5em}
 
   \begin{itemize}
-    \item Recommended checkpoint: \textbf{FT-4900} (1e-5, dev-loss-selected).
+    \item Recommended checkpoint: \textbf{FT-1e-5} (best dev loss, found at step 4900).
     \item Next: Filipino listener study to validate the automatic metrics.
-    \item Next: more checkpoints around 1e-5; systematic checkpoint-policy comparison.
+    \item Next: more learning rates around 1e-5; repeat runs across seeds.
     \item Next: curated sentence-level data to improve prosody.
   \end{itemize}
 \end{frame}

@@ -1,0 +1,23 @@
+{
+  "run_name": "full-filipino-pld-test-new-lr-rerun-eval",
+  "wandb_eval_run_id": "omnivoice-fil-new-lr-eval-892960a1",
+  "eval_samples": 4322,
+  "targets": [
+    {
+      "label": "best_eval_lr_2e_5",
+      "wandb_artifact": "duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/omnivoice-full-filipino-pld-best-eval-lr-2e-5-checkpoint-best:v0",
+      "notes": "Controlled 5000-step best-development-loss checkpointing run, learning_rate=0.00002."
+    },
+    {
+      "label": "best_eval_lr_5e_6",
+      "wandb_artifact": "duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/omnivoice-full-filipino-pld-best-eval-lr-5e-6-checkpoint-best:v0",
+      "notes": "Controlled 5000-step best-development-loss checkpointing run, learning_rate=0.000005."
+    }
+  ],
+  "heavy_runtime_dirs_not_exported": {
+    "omnivoice_repo": "/kaggle/temp/omnivoice_filipino_pld_new_lr_eval/OmniVoice",
+    "downloaded_checkpoints": "/kaggle/temp/omnivoice_filipino_pld_new_lr_eval/work/wandb_checkpoint_artifacts",
+    "full_generated_wavs": "/kaggle/temp/omnivoice_filipino_pld_new_lr_eval/work/results/full_test_new_lr_reruns",
+    "eval_models": "/kaggle/temp/omnivoice_filipino_pld_new_lr_eval/work/tts_eval_models"
+  }
+}

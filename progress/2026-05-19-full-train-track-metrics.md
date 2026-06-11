@@ -1,5 +1,11 @@
 # 2026-05-19 full train track metrics
 
+> **Superseded note.** The metric tables below mix final-step checkpoints
+> (1000-step LR `2e-5`, 2000-step LR `5e-6`) with one best-development-loss
+> checkpoint, so they are not a clean learning-rate comparison. They are kept
+> as project history. The final controlled four-model comparison is in
+> [2026-06-11-controlled-new-lr-eval.md](2026-06-11-controlled-new-lr-eval.md).
+
 > Left out running [kaggle](https://www.kaggle.com/code/pipluppp/omnivoice-pld-full-train-tokenized-dataset-simple?scriptVersionId=320417583) ([wandb](https://wandb.ai/duncanb013-polytechnic-university-of-the-philippines/OmniVoice-PLD-Filipino/runs/omnivoice-fil-eaa6d9c2?nw=nwuserduncanb013)) of the simplified code that does a full train 1000-step with tokenized dataset
 
 Setup the Evaluation metrics notebooks to load finetune models and base, run the metrics and the models needed to compute the metrics, run inference on test samples, check out how it performs, etc.

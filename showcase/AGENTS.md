@@ -1,10 +1,12 @@
 # Showcase — Agent Notes
 
 Listening-test web app comparing voice-clone outputs of the base OmniVoice
-checkpoint vs. three fine-tuned learning-rate variants (LR 2e-5, LR 5e-6,
-LR 1e-5) on twelve PLD Filipino test utterances (5 sentences from different
+checkpoint vs. the three controlled fine-tunes — best development-loss
+checkpoints of identical 5,000-step runs at LR 2e-5, LR 5e-6, and LR 1e-5 —
+on twelve PLD Filipino test utterances (5 sentences from different
 speakers + 7 single words from speaker 0002). Part of the parent research
-project (see `../moc.md` and `../progress/2026-06-11-showcase-web-app.md`).
+project (see `../moc.md`, `../progress/2026-06-11-showcase-web-app.md`, and
+`../progress/2026-06-11-controlled-new-lr-eval.md`).
 
 ## Stack
 
@@ -49,9 +51,19 @@ All wavs are named exactly after the dataset utterance id, e.g.
 *prompt's own* utterance id (e.g. `…0396.wav` is the prompt for target
 `…0394`); the target→prompt mapping is `promptId` in `src/data/samples.ts`.
 The generated wavs were exported from the WandB evaluation tables of the
-Kaggle runs (`evaluation_audio_examples` table: `base` + `finetuned` =
-1000-step LR 2e-5; `finetune_evaluation_audio_examples` table:
-`finetuned_2000` = LR 5e-6, `finetuned_best` = step-4900 LR 1e-5).
+Kaggle runs:
+
+- `base` ← `evaluation_audio_examples` table of the first full eval run
+  (local raw export `../step-1000/`).
+- `finetune_lr_1e-5` ← `finetune_evaluation_audio_examples` table,
+  `finetuned_best` rows = step-4900 best-dev-loss checkpoint of the 5000-step
+  LR 1e-5 run (local raw export `../step-2000-and-best-eval-4900/`).
+- `finetune_lr_2e-5` / `finetune_lr_5e-6` ← `finetune_evaluation_audio_examples`
+  table of the controlled new-LR eval run
+  (`../eval-2e-5-and-5e-6/run-omnivoice-fil-new-lr-eval-892960a1-…`),
+  `best_eval_lr_2e_5` / `best_eval_lr_5e_6` rows = best-dev-loss checkpoints
+  of the controlled 5000-step runs.
+
 No code change is needed when swapping files: the availability hook detects
 them at load time and enables the corresponding model toggle.
 
@@ -64,8 +76,10 @@ them at load time and enables the corresponding model toggle.
 - **`compatibility_date` is pinned to 2026-05-01** because the local runtime
   bundled with wrangler 4.86 rejects newer dates. Upgrade wrangler before
   raising it.
-- The evaluation metrics in `samples.ts` come from `../hyperparameter_tuning.md`
-  (full PLD Filipino test split). Update both together if results change.
+- The evaluation metrics in `samples.ts` are the final controlled-comparison
+  values from `../hyperparameter_tuning.md` and
+  `../eval-2e-5-and-5e-6/metrics/metric_summary.json` (full PLD Filipino test
+  split). Update them together if results change.
 - `.wrangler/` is local dev state and gitignored; never commit it.
 
 ## Verifying changes

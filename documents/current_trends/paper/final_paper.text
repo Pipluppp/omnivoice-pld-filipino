@@ -1,485 +1,310 @@
-Filipino Adaptation of OmniVoice for Voice Cloning
-and Text-to-Speech
-A Pilot Study
-Group Project
-May 20, 2026
+Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
+
+Duncan F. Bandojo Kristina Cassandra D. Bognot
+Gwyneth Anne M. Gabales Michael Lannz M. Salalima
+Joanna Mae R. Salvador
+Polytechnic University of the Philippines Manila, Philippines
+
 Abstract
-This pilot study investigates whether Filipino-specific fine-tuning improves OmniVoice,
-a pretrained massively multilingual zero-shot text-to-speech and voice cloning model. Om-
-niVoice already supports Filipino, but its language table reports only 7.71 hours of Filipino
-in the original multilingual training mixture. The study uses the Filipino subset of the
-UP-DSP Philippine Languages Database (PLD), prepares a cleaned read-speech corpus,
-tokenizes audio with the OmniVoice/Higgs Audio tokenizer workflow, fine-tunes the pre-
-trained checkpoint on Kaggle T4 GPUs, and evaluates generated speech using word error
-rate (WER), objective speaker similarity (SIM-o), and UTMOS. Four systems are compared:
-the base OmniVoice model, a 1000-step fine-tuned checkpoint at learning rate 2e-5, a 2000-
-step fine-tuned checkpoint at learning rate 5e-6, and a 4900-step checkpoint selected from
-a 5000-step run at learning rate 1e-5 by lowest development loss. The 4900-step checkpoint
-reduced WER from 22.55% to 18.52%, while keeping SIM-o slightly above the base model.
-The findings show that Filipino fine-tuning can improve intelligibility under limited com-
-pute, but that improvements depend strongly on checkpoint selection and cannot be judged
-by training loss or speaker similarity alone.
+This pilot study asks whether Filipino-specific fine-tuning improves OmniVoice, a pretrained massively multilingual zero-shot text-tospeech and voice cloning model. OmniVoice already supports Filipino, but its language table reports only 7.71 hours of Filipino in the original multilingual training mixture. We prepare a cleaned 39.8-hour Filipino read-speech corpus from the UP-DSP Philippine Languages Database, tokenize the audio with the Higgs Audio tokenizer, fine-tune the pretrained checkpoint on free Kaggle T4 GPUs, and evaluate generated speech on a 4,322-utterance speakerdisjoint test set using word error rate (WER), objective speaker similarity (SIM-o), and UTMOS. Four systems are compared in a controlled setup: the base model and the best-development-loss checkpoints of three 5000-step fine-tuning runs that differ only in learning rate (5e-6, 1e-5, 2e-5). The 1e-5 checkpoint, selected at step 4900, is the strongest overall: it reduces WER from 22.55% to 18.52% (a 17.9% relative reduction) while keeping SIM-o slightly above the base model. The 2e-5 checkpoint nearly matches that WER at 18.83% but drops SIM-o to 0.583, below the base model, while the 5e-6 checkpoint preserves speaker similarity best (SIM-o 0.605) but improves WER by only 0.59 points. The base model keeps the highest UTMOS. Filipino fine-tuning can therefore improve intelligibility under limited compute, but the learning rate controls an intelligibility-versus-speaker-similarity tradeoff, and checkpoints cannot be judged from training loss or any single metric alone.
+CCS Concepts
+· Computing methodologies  Natural language processing; Neural networks.
+Keywords
+text-to-speech, voice cloning, Filipino, low-resource languages, transfer learning, OmniVoice, Philippine Languages Database
 1 Introduction
-1.1 Context and Frame of Reference
-Voice cloning and text-to-speech (TTS) systems synthesize speech from written text and, in
-zero-shot voice cloning settings, imitate the voice characteristics of a reference speaker from
-a short audio prompt. Recent neural speech generation systems increasingly use pretrained
-multilingual models, discrete audio tokenizers, and generative modeling strategies to support
-many languages and speakers without training a new model for every use case (Wang et al.,
-2023; Le et al., 2023; Wang et al., 2024; Zhu et al., 2026). These technologies are relevant to
-accessibility, education, narration, localization, and language-learning applications.
-Filipino is a major language in the Philippines, but high-quality open-source Filipino voice
-cloning workflows remain less developed than English-centered systems. A direct Filipino model
-trained from scratch would require large data and compute resources. A more practical approach
-for a course-scale project is transfer learning: start from an existing multilingual TTS model
-and fine-tune it on a curated Filipino dataset.
-1.2 Motivation from Previous Works
-OmniVoice is a suitable base model because it is open source, supports more than 600 languages,
-and includes Filipino with language IDfil(Zhu et al., 2026). However, broad language coverage
-1
+Voice cloning and text-to-speech (TTS) systems synthesize speech from written text and, in zero-shot voice cloning settings, imitate the voice of a reference speaker from a short audio prompt. Recent neural speech generation systems rely on pretrained multilingual models, discrete audio tokenizers, and generative modeling strategies to support many languages and speakers without training a new model for every use case [8, 13­15]. These systems matter
 
-does not guarantee strong language-specific quality. OmniVoice reports 7.71 Filipino hours in
-its multilingual training mixture, while the PLD paper reports 48:56:36 of Filipino speech in the
-UP-DSP Philippine Languages Database (Cajote et al., 2024). This creates a practical research
-opportunity: determine whether supervised Filipino adaptation improves the pretrained model
-on Filipino speech generation.
-1.3 Gap, Problem, and Opportunity
-The gap addressed in this study is not the absence of Filipino support in OmniVoice. The model
-already supports Filipino. The actual problem is that Filipino-specific performance may remain
-limited because Filipino represents a small portion of the original multilingual training data.
-The opportunity is to use a larger curated Filipino read-speech corpus to adapt the model, then
-measure the change using objective TTS and voice-cloning metrics.
-The machine learning problem is:
-Given a pretrained multilingual voice cloning model and a curated Filipino speech-
-text corpus, determine whether supervised fine-tuning improves Filipino generated
-speech compared with the original pretrained checkpoint.
-1.4 Objectives and Research Questions
-The main research question is:
-How much does Filipino-specific fine-tuning improve OmniVoice performance for Fil-
-ipino TTS and voice cloning across intelligibility, naturalness, and speaker similarity
-metrics?
-The specific objectives are:
-1. Prepare a clean Filipino read-speech dataset from the UP-DSP Philippine Languages
-Database.
-2. Convert the dataset into the JSONL and tokenized WebDataset format required by Om-
-niVoice.
-3. Fine-tune the pretrainedk2-fsa/OmniVoicecheckpoint under Kaggle T4 GPU con-
-straints.
-4. Track training runs and checkpoints using Weights and Biases.
-5. Generate matched Filipino test outputs from the base and fine-tuned models.
-6. Evaluate each model using WER, SIM-o, and UTMOS.
-7. Identify the strongest checkpoint and explain the metric trade-offs.
-1.5 Significance
-This study is significant because it provides a practical workflow for Filipino adaptation of
-a modern multilingual voice cloning model. It also gives evidence on whether low-resource
-language fine-tuning can improve a strong pretrained model under limited free GPU compute.
-The result is useful for academic speech AI projects, Filipino TTS experimentation, and future
-voice cloning prototypes that require clearer Filipino generated speech.
-2
+for accessibility, education, narration, localization, and languagelearning applications.
+Filipino is a major language in the Philippines, but open Filipino voice cloning workflows remain less developed than Englishcentered systems. Training a Filipino model from scratch would require data and compute far beyond a course-scale project. A more practical path is transfer learning [10]: start from an existing multilingual TTS model and fine-tune it on a curated Filipino dataset.
+OmniVoice is a suitable base model for this approach because it is open source, supports more than 600 languages, and includes Filipino with language ID fil [15]. Broad coverage, however, does not guarantee strong language-specific quality. OmniVoice reports 7.71 hours of Filipino in its multilingual training mixture, while the UP-DSP Philippine Languages Database (PLD) holds 48:56:36 of Filipino speech [4]. The gap this study addresses is therefore not missing Filipino support; it is that Filipino-specific performance may remain limited because Filipino is a small fraction of the original training data, and a curated corpus with roughly four times more usable Filipino training speech is available to close that gap.
+The machine learning problem is: given a pretrained multilingual voice cloning model and a curated Filipino speech-text corpus, determine whether supervised fine-tuning improves Filipino generated speech compared with the original pretrained checkpoint. The main research question follows directly: how much does Filipinospecific fine-tuning improve OmniVoice for Filipino TTS and voice cloning across intelligibility, naturalness, and speaker-similarity metrics?
+To answer it, the study makes the following contributions:
+(1) a cleaned, speaker-disjoint Filipino read-speech dataset (42,276 utterances, 39.8 hours) prepared from PLD in the JSONL and tokenized WebDataset format OmniVoice expects;
+(2) a reproducible fine-tuning workflow for the pretrained k2-fsa/OmniVoice checkpoint that fits free Kaggle T4 GPU limits, with all runs tracked in Weights and Biases [2];
+(3) a controlled comparison of the base model and the bestdevelopment-loss checkpoints of three identical 5000-step fine-tuning runs differing only in learning rate, evaluated on the full held-out test split with WER, SIM-o, and UTMOS;
+(4) an error and trade-off analysis explaining which fine-tuning configuration helps, which hurts, and why checkpoint selection matters.
 
-1.6 Scope and Delimitation
-The study is limited to Filipino read speech from the PLD dataset. It does not train a model
-from scratch, does not evaluate all Philippine languages, and does not claim commercial readi-
-ness. Objective evaluation uses WER, SIM-o, and UTMOS. Human listening evaluation is
-treated as a recommended next step because the current completed results are automatic full-
-test-set metrics. The project is also constrained by Kaggleâ€™s free T4 GPU environment, so model
-size, training steps, batch size, and checkpoint retention are selected to fit practical runtime
-and memory limits.
-2 Related Works
-Voice cloning is a specialized form of TTS where the system must generate the requested con-
-tent while preserving speaker identity from a reference prompt. Recent work has shifted from
-speaker-specific systems toward large pretrained speech generation models. VALL-E demon-
-strated neural codec language modeling for zero-shot TTS by generating discrete audio codec
-tokens conditioned on text and a short acoustic prompt (Wang et al., 2023). Voicebox ex-
-tended multilingual speech generation and text-guided speech editing at scale (Le et al., 2023).
-MaskGCT and F5-TTS reflect a broader move toward efficient non-autoregressive or masked
-generation approaches (Wang et al., 2024; Chen et al., 2024).
-OmniVoice is the model most directly connected to this study. It is described as a massively
-multilingual zero-shot TTS system with a diffusion language model-style masked-token predic-
-tion process (Zhu et al., 2026). Instead of predicting semantic tokens first and then generating
-acoustic tokens, OmniVoice directly maps text and conditioning signals into multi-codebook
-acoustic tokens. It uses the Higgs Audio tokenizer for 8-codebook acoustic representation and
-waveform reconstruction (Boson AI, 2025). These design choices make it practical to fine-
-tune an existing pretrained checkpoint rather than build a new Filipino speech generator from
-scratch.
-The UP-DSP Philippine Languages Database is the primary data source for this study. Ca-
-jote et al. (2024) describe PLD as a multilingual speech corpus for Philippine spoken languages,
-including Filipino, English, Cebuano, Kapampangan, Hiligaynon, Ilokano, Bikolano, Waray,
-and Tausug. The Filipino subset is relevant because it provides paired speech and transcript
-files suitable for supervised TTS fine-tuning.
-Evaluation in zero-shot TTS usually separates intelligibility, speaker preservation, and nat-
-uralness. WER or CER is used for intelligibility, speaker embedding cosine similarity is used
-for objective speaker preservation, and UTMOS can estimate naturalness (Zhu et al., 2026; Le
-et al., 2023; Saeki et al., 2022). OmniVoice uses these same metric families in its evaluation
-documentation. This study adapts that evaluation logic to Filipino fine-tuning.
+The study is limited to Filipino read speech from PLD. It does not train a model from scratch, evaluate other Philippine languages, or claim commercial readiness. Evaluation is objective and automatic; human listening evaluation is a recommended next step. Kaggle's free T4 environment constrains model size, training steps, batch size, and checkpoint retention throughout.
+2 Related Work
+Voice cloning is a specialized form of TTS where the system must generate the requested content while preserving speaker identity from a reference prompt [1]. Recent work has shifted from speakerspecific systems toward large pretrained speech generation models. VALL-E demonstrated neural codec language modeling for zeroshot TTS by generating discrete audio codec tokens conditioned on text and a short acoustic prompt [13]. Voicebox extended multilingual speech generation and text-guided speech editing at scale [8]. MaskGCT and F5-TTS reflect a broader move toward efficient non-autoregressive or masked generation [6, 14].
+OmniVoice is the model most directly connected to this study. It is a massively multilingual zero-shot TTS system with a diffusion language model-style masked-token prediction process [15]. Instead of predicting semantic tokens first and then generating acoustic tokens, OmniVoice directly maps text and conditioning signals into multi-codebook acoustic tokens. It uses the Higgs Audio tokenizer for 8-codebook acoustic representation and waveform reconstruction [3]. These design choices make it practical to finetune an existing pretrained checkpoint rather than build a new Filipino speech generator from scratch.
+The UP-DSP Philippine Languages Database is the primary data source. Cajote et al. [4] describe PLD as a multilingual speech corpus for Philippine spoken languages, covering Filipino, English, Cebuano, Kapampangan, Hiligaynon, Ilokano, Bikolano, Waray, and Tausug. The Filipino subset provides the paired speech and transcript files that supervised TTS fine-tuning requires.
+Evaluation in zero-shot TTS usually separates intelligibility, speaker preservation, and naturalness. WER or CER measures intelligibility through an ASR model [9, 11], speaker-embedding cosine similarity measures objective speaker preservation [5, 7], and UTMOS estimates naturalness [12]. OmniVoice and Voicebox report these same metric families [8, 15]; this study adapts that evaluation logic to Filipino fine-tuning.
 3 Methodology
-3.1 Data Acquisition
-The dataset used in this study is the Filipino subset of the UP-DSP Philippine Languages
-Database, released through Mozilla Data Collective under a CC-BY-NC-4.0 license. The dataset
-consists of WAV audio files and LOG transcript files. The source dataset was acquired as a
-local dataset package and then processed into an upload-ready Kaggle dataset.
-The PLD Filipino subset reported in the paper contains 135 speakers, 52,879 utterances,
-48:56:36 total duration, and an average utterance length of 3.5796 seconds. For this pilot study,
-3
+Figure 1 shows the five stages of the workflow: dataset preparation, audio tokenization, fine-tuning, matched inference, and objective evaluation.
+3.1 Dataset and Pre-processing
+The dataset is the Filipino subset of the UP-DSP Philippine Languages Database, released through Mozilla Data Collective under a CC-BY-NC-4.0 license. It consists of WAV audio files and LOG transcript files. The PLD paper reports 135 speakers, 52,879 utterances, 48:56:36 total duration, and a 3.58-second average utterance for the Filipino subset [4].
+Only read or prompted Filipino speech was used. Spontaneous speech was excluded because a speaker's free response may not
 
-only read or prompted Filipino speech was used. Spontaneous speech was excluded because a
-speakerâ€™s free response may not exactly match a displayed prompt, which increases transcript-
-audio mismatch risk for supervised TTS.
-T able 1
-Filipino subset statistics from the PLD paper.
-Field Value
-Language Filipino
-Language IDfil
-Speakers 135
-Utterances 52,879
-Duration 48:56:36
-Average utterance length 3.5796 seconds
-Figure 1
-PLD language statistics table excerpt.
-4
+PLD Filipino WAV + LOG
 
-3.2 Data Pre-processing
-The local preparation script parses PLD folders, matches WAV files to LOG transcript entries,
-filters unsuitable rows, and writes OmniVoice-compatible JSONL manifests. Each JSONL row
-contains an utterance ID, relative audio path, transcript text, and language ID:
-{"id":"0000.110816.021250.0001",
-"audio_path":"wavs/0000/0000.110816.021250.0001.wav",
-"text":"manugang",
-"language_id":"fil"}
-The pre-processing rules were intentionally conservative. The final dataset:
-Âˆkept read or prompted Filipino speech only;
-Âˆexcluded spontaneous prompt sources;
-Âˆexcluded transcripts containing parentheses;
-Âˆexcluded transcripts containing digits;
-Âˆexcluded unreadable or zero-byte WAV files;
-Âˆkept clips between 1.0 and 15.0 seconds;
-Âˆnormalized transcript whitespace lightly;
-Âˆsplit speakers disjointly across train, development, and test sets.
-The resulting local package is:
-data/pld_filipino_clean/
-wavs/
-train.jsonl
-dev.jsonl
-test.jsonl
-T able 2
-Prepared Filipino dataset split used in the study.
-Split Samples Percent Hours Speakers
-Train 33,448 79.12% 31.902 103
-Development 4,506 10.66% 3.705 13
-Test 4,322 10.22% 4.165 13
-Total 42,276 100.00% 39.772 129
-3.3 Feature Engineering
-For this TTS task, feature engineering means converting audio and text into the representations
-expected by OmniVoice. Text is kept as Filipino transcript text with language IDfil. Audio is
-transformed into discrete acoustic tokens using the OmniVoice audio-token extraction workflow.
-5
+Bandojo et al.
 
-OmniVoice uses the Higgs Audio V2 tokenizer, referenced in the training runs as
-eustlb/higgs-audio-v2-tokenizer. Audio is resampled and converted into 8-codebook
-acoustic token sequences. These tokens are stored in WebDataset shards and referenced through
-data.lstmanifests. The tokenized full Filipino PLD dataset was reused as a Kaggle dataset
-artifact to avoid repeated tokenization during later experiments.
-Feature selection was handled by data filtering rather than statistical attribute selection.
-The most important selection decision was to use read Filipino speech only, because supervised
-TTS fine-tuning depends on reliable transcript-audio alignment. The train, development, and
-test sets were speaker-disjoint to reduce leakage of speaker identity across splits.
-Figure 2
-Fine-tuning and evaluation pipeline.
-PLD Filipino
-WAV + LOG
-Parse and clean
-transcripts
-Speaker-disjoint
-train/dev/test
-OmniVoice
-JSONL
-Higgs Audio
-tokenization
-WebDataset
-token shards
-Fine-tune
-on Kaggle T4
-Fine-tuned
-checkpoints
-Matched
-test inference
-WER, SIM-o,
-UTMOS
-3.4 Model Development
-The machine learning tool used for model development was OmniVoice, specifically the
-pretrainedk2-fsa/OmniVoicecheckpoint. The training scripts were adapted into Kaggle
-notebook-style Python scripts because all training and evaluation were run in Kaggle notebooks.
-Weights and Biases was used to track runs, configurations, checkpoints, generated examples,
-and evaluation summaries.
-All fine-tuned models used the same core T4-friendly setup: FP16 mixed precision, SDPA
-attention, batch token budget of 1024, gradient accumulation of 8, maximum batch size of 4,
-maximum sample tokens of 1200, AdamW optimization, weight decay of 0.01, maximum gradi-
-ent norm of 1.0, seed 42, cosine learning-rate decay after a 1% warmup, andk2-fsa/OmniVoice
-as the initialization checkpoint. The model architecture usedQwen/Qwen3-0.6Bas the language
-model path, audio vocabulary size 1025, audio mask ID 1024, and 8 audio codebooks.
-The loss function came from OmniVoiceâ€™s own training objective. Zhu et al. (2026) describe
-OmniVoice as a single-stage non-autoregressive TTS model trained with a discrete masked diffu-
-sion objective. Instead of predicting a separate semantic representation before acoustic tokens,
-OmniVoice directly predicts multi-codebook acoustic tokens from text, language conditioning,
-prompt audio, and any unmasked target audio tokens. During training, random target audio-
-token positions are replaced by the mask token, and the model is optimized to recover the
-original token IDs only at those masked positions.
-In implementation terms, our runs used weighted cross-entropy over the masked acoustic-
-token positions. Text tokens, style or language-control tokens, prompt audio, and unmasked
-target audio tokens were ignored in the loss. The 8 codebook losses were combined using the
-configured audio-codebook weights[8, 8, 6, 6, 4, 4, 2, 2], which gives more weight to
-6
+Parse, clean, filter transcripts
+Speaker-disjoint train/dev/test + OmniVoice JSONL
+Higgs Audio tokenization  WebDataset shards
+Fine-tune on Kaggle T4
 
-lower acoustic codebooks that carry coarser speech structure. The masking ratio was sampled
-from[0.0, 1.0], following OmniVoiceâ€™s full-codebook random masking design, and the prompt
-ratio was sampled from[0.0, 0.3]so training examples used variable amounts of reference
-acoustic context.
-The optimizer and learning-rate schedule were also adapted from OmniVoice but reduced for
-the project constraints. The OmniVoice paper reports AdamW, cosine learning-rate scheduling,
-warmup, mixed precision, and large token batches on H800 GPUs (Zhu et al., 2026). This
-project kept AdamW and cosine decay but used FP16, SDPA attention, smaller token batches,
-and gradient accumulation for Kaggle T4. The warmup ratio of 0.01 gave 10 warmup steps for
-the 1000-step run, 20 for the 2000-step run, and 50 for the 5000-step run. The learning rates
-tested three adaptation regimes:2e-5for a short 1000-step run,5e-6for a more conservative
-2000-step run, and1e-5for a longer run whose 4900-step checkpoint was selected by lowest
-development loss.
-T able 3
-Shared Kaggle training configuration for the fine-tuning runs.
-Field Value
-Base / pretrained modelk2-fsa/OmniVoice
-LLM pathQwen/Qwen3-0.6B
-Audio tokenizereustlb/higgs-audio-v2-tokenizer
-Audio codebooks 8
-Audio vocabulary size 1025
-Audio mask ID 1024
-Precision FP16
-Attention implementation SDPA
-Batch tokens 1024
-Gradient accumulation steps 8
-Maximum batch size 4
-Maximum sample tokens 1200
-Minimum sample tokens 50
-Weight decay 0.01
-Maximum gradient norm 1.0
-Optimizer AdamW
-Learning-rate schedule Cosine decay after 1% warmup
-Loss Weighted cross-entropy on masked acoustic-token
-positions
-Audio-codebook loss weights[8, 8, 6, 6, 4, 4, 2, 2]
-Drop condition ratio 0.1
-Prompt ratio range[0.0, 0.3]
-Mask ratio range[0.0, 1.0]
-Language ratio 0.8
-Seed 42
-Train / dev / test-reference
-samples
-33,448 / 4,506 / 4,322
-7
+Fine-tuned checkpoints
 
-T able 4
-Fine-tuned checkpoint metadata from Weights and Biases artifacts.
-Checkpoint Learning
-rate
-Steps Checkpoint policy Notes
-checkpoint-10002e-5 1000 step checkpoint Initial full Filipino PLD run;
-eval/loss at log step 1000 was
-4.192143.
-checkpoint-20005e-6 2000 final step
-checkpoint
-Run full Filipino PLD; W&B
-artifact for the 2000-step
-checkpoint.
-checkpoint-49001e-5 5000
-configured;
-selected at
-4900
-development-loss-
-selected
-checkpoint
-Eval-selected run; lowest eval loss
-4.1618266105651855 at step 4900.
-3.5 Model Testing
-Model testing used the held-out Filipino test split. For each test sample, the model generated
-target speech from the Filipino target text while using reference audio from the same PLD test
-speaker as the voice prompt. The base model and all fine-tuned checkpoints used the same test
-split, reference-prompt construction, generation settings, and evaluation pipeline.
-The first evaluation notebook measured the base model and the 1000-step checkpoint. A
-later finetune-focused notebook evaluated the 2000-step and 4900-step development-loss-selected
-checkpoints while reusing the base row from the previous full run. This reuse is valid for this pilot
-study because the test split, manifest construction, inference parameters, OmniVoice evaluation
-path, and evaluator models were unchanged.
-3.6 Model Evaluation
-The objective metrics were:
-ÂˆWER:ASR-mediated intelligibility. The generated audio is transcribed and compared
-with the target transcript using word-level insertions, deletions, and substitutions. Lower
-is better.
-ÂˆSIM-o:objective speaker similarity between reference audio and generated audio using
-speaker embeddings. Higher is better.
-ÂˆUTMOS:predicted mean opinion score for naturalness. Higher is better.
-WER is computed as:
-WER = S+D+I
-N Ã—100,(1)
-whereSis substitutions,Dis deletions,Iis insertions, andNis the number of reference
-words.
-SIM-o uses cosine similarity:
-SIM-o(r, g) = er Â·e g
-âˆ¥erâˆ¥âˆ¥egâˆ¥ ,(2)
-wheree r is the reference speaker embedding ande g is the generated-audio speaker embed-
-ding.
-8
+Matched test inference  WER, SIM-o, UTMOS
+
+Figure 1: Fine-tuning and evaluation pipeline. Table 1: Prepared Filipino dataset splits (speaker-disjoint).
+
+Split
+
+Samples Percent Hours Speakers
+
+Train
+
+33,448 79.12% 31.90
+
+103
+
+Development 4,506 10.66% 3.71
+
+13
+
+Test
+
+4,322 10.22% 4.17
+
+13
+
+Total
+
+42,276 100.00% 39.77
+
+129
+
+match the displayed prompt, which raises transcript-audio mismatch risk for supervised TTS. The preparation script parses PLD folders, matches WAV files to LOG transcript entries, filters unsuitable rows, and writes OmniVoice-compatible JSONL manifests. Each row contains an utterance ID, relative audio path, transcript text, and language ID:
+{"id":"0000.110816.021250.0001", "audio_path":"wavs/0000/....0001.wav", "text":"manugang", "language_id":"fil"}
+The filtering rules were intentionally conservative: spontaneous prompt sources were dropped, transcripts containing parentheses or digits were excluded, unreadable or zero-byte WAV files were removed, only clips between 1.0 and 15.0 seconds were kept, and transcript whitespace was lightly normalized. Speakers were split disjointly across train, development, and test sets so that no test voice appears in training. Table 1 shows the resulting splits.
+The cleaned corpus spans varied prompt domains. The largest read-speech sources are news sentences (4,330 clips), medical sentences (2,397), time expressions (1,973), common expressions (1,941), short stories (1,904), greetings (1,708), interrogatives (1,634), and
+
+Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
+
+Table 2: Shared training configuration across all fine-tuning runs.
+
+Field
+Base model LLM path Audio tokenizer Audio codebooks / vocab Precision / attention Batch tokens Gradient accumulation Max batch size Sample tokens (min­max) Optimizer Max gradient norm LR schedule Loss
+Codebook loss weights Mask ratio range Prompt ratio range Drop condition ratio Seed
+
+Value
+k2-fsa/OmniVoice Qwen/Qwen3-0.6B Higgs Audio V2 8 / 1025 (mask ID 1024) FP16 / SDPA 1024 8 4 50­1200 AdamW, weight decay 0.01 1.0 cosine decay, 1% warmup weighted cross-entropy on masked acoustic tokens [8, 8, 6, 6, 4, 4, 2, 2] [0.0, 1.0] [0.0, 0.3] 0.1 42
+
+Filipino proverbs or salawikain (1,620). Many remaining sources are isolated-word prompts (names, cuisines, landmarks, ordinals), which explains the short average utterance length and matters later when interpreting prosody-related results.
+The 31.9 training hours are roughly four times the 7.71 Filipino hours in OmniVoice's original training mixture, which is the quantitative basis for expecting fine-tuning to help.
+3.2 Audio Tokenization
+OmniVoice does not train on raw waveforms. Audio is resampled to 24 kHz and converted into discrete 8-codebook acoustic token sequences with the Higgs Audio V2 tokenizer1 [3], then stored in WebDataset shards referenced through data.lst manifests. Tokenization is expensive on free GPUs, so the tokenized full dataset was saved once as a Kaggle dataset artifact and reused across all training runs. Text needs no feature engineering beyond keeping the Filipino transcript and the fil language ID.
+3.3 Fine-Tuning Setup
+All runs fine-tune the pretrained k2-fsa/OmniVoice checkpoint, whose language model component is Qwen/Qwen3-0.6B, inside Kaggle T4 notebooks. Weights and Biases tracked configurations, losses, checkpoints, generated examples, and evaluation summaries [2]; the consolidated report is available online.2 Table 2 lists the shared configuration.
+The loss is OmniVoice's own training objective. OmniVoice is a single-stage non-autoregressive model trained with a discrete
+1eustlb/higgs-audio-v2-tokenizer on the Hugging Face Hub. 2 https://wandb.ai/duncanb013- polytechnic- university- of- thephilippines/OmniVoice- PLD- Filipino/reports/OmniVoice- PLDFilipino- finetuning- - VmlldzoxNjk0ODkyMg?accessToken= ktcztpc3ocu4gmtctis13mdubb82ec1r4rnyuxdta56tts4z5j4f965olbm0v5ka
+
+masked diffusion objective [15]: random target audio-token positions are replaced by the mask token, and the model recovers the original token IDs only at those positions, conditioned on text, language, prompt audio, and unmasked target tokens. Our runs implement this as weighted cross-entropy over masked acoustic-token positions; text tokens, control tokens, prompt audio, and unmasked targets are excluded from the loss. The codebook weights [8, 8, 6, 6, 4, 4, 2, 2] emphasize lower codebooks, which carry coarser speech structure.
+Two preliminary runs (1000 steps at learning rate 2e-5 and 2000 steps at 5e-6, both keeping the final-step checkpoint) first established that the workflow runs end to end on Kaggle T4 hardware. Because they mixed checkpoint policy, step count, and learning rate, their results could not isolate any single setting and are treated as project history. The final comparison uses three controlled runs that share the same 5000-step budget and the same developmentloss-selected checkpoint policy -- the development set is evaluated at fixed intervals and a checkpoint is saved only when development loss improves -- and differ only in learning rate:
+· FT-5e-6: the most conservative update; best-developmentloss checkpoint.
+· FT-1e-5: the repository-aligned fine-tuning learning rate; its lowest development loss, 4.162, occurred at step 4900.
+· FT-2e-5: the most aggressive update; best-developmentloss checkpoint.
+The learning rates are deliberately lower than OmniVoice's largescale pretraining setting because these runs update an already pretrained checkpoint on a much smaller corpus. The 1% warmup gives 50 warmup steps per run.
+
+3.4 Evaluation Design
+All systems were evaluated on the same held-out 4,322-utterance test split with identical manifests, inference parameters, and evaluator models, so differences between rows reflect the checkpoints rather than the pipeline.
+For each test utterance, the model generates the target text while cloning a reference voice. The reference prompt is a different utterance from the same test speaker (the next utterance from that speaker in the manifest), so the model never hears the target audio it must produce. Inference used 32 unmasking steps with batch size 2 on two T4 GPUs. The base model was measured in a first full evaluation run; later runs evaluated each best-development-loss fine-tuned checkpoint and reused the base row, which is valid because the test split, manifests, inference parameters, and evaluator versions were unchanged.
+Three objective metrics were computed with the OmniVoice evaluation modules and the k2-fsa/TTS_eval_models evaluator checkpoints:
+· WER (lower is better): generated audio is transcribed by Whisper-large-v3 [11] with Tagalog as the decoding language, and the transcript is compared with the target text by edit distance [9]:
+
+ +  + 
+
+WER =
+
+× 100,
+
+(1)
+
+
+
+Table 3: Full PLD Filipino test-set results. All fine-tuned rows are best-development-loss checkpoints of identical 5000-step runs differing only in learning rate. Lower WER is better; higher SIM-o and UTMOS are better. Bold marks the best value per column.
+
+Model
+
+WER (%) WER SIM-o UTMOS
+
+Base OmniVoice
+
+22.55
+
+-- 0.602 3.64
+
+FT-5e-6
+
+21.96 -0.59 0.605
+
+3.60
+
+FT-1e-5 (step 4900) 18.52 -4.03 0.604
+
+3.61
+
+FT-2e-5
+
+18.83 -3.72 0.583
+
+3.61
+
+22.55 20
+
+21.96
+
+18.52
+
+18.83
+
+Bandojo et al.
+
+Table 4: WER edit-operation counts on the full test set.
+
+Model
+
+Ins. Del. Sub. Words
+
+Base OmniVoice FT-5e-6 FT-1e-5 FT-2e-5
+
+2,668 3,005 2,045 2,156
+
+640 2,858 577 2,426 603 2,417 604 2,392
+
+27,342 27,354 27,354 27,354
+
+3,000
+
+Insertions Deletions Substitutions
+
+2,000
+
+WER (%) Edit operations (count)
+
+10
+
+0 Base
+
+FT-5e-6
+
+FT-1e-5
+
+FT-2e-5
+
+Figure 2: Test-set WER by system. The dashed line marks the base-model WER; all fine-tuned checkpoints fall below it, with FT-1e-5 and FT-2e-5 clearly ahead.
+
+where , ,  are substitutions, deletions, and insertions
+
+and  is the number of reference words. WER is an ASR-
+
+mediated intelligibility estimate, not a direct human com-
+
+prehension score.
+
+· SIM-o (higher is better): cosine similarity between speaker
+
+embeddings of the reference prompt and the generated
+
+audio,
+
+SIM-o(, )
+
+=
+
+e · e ,
+e  e 
+
+(2)
+
+using a WavLM-large ECAPA-TDNN speaker encoder [5, 7].
+
+· UTMOS (higher is better): a learned mean-opinion-score
+
+predictor for naturalness [12], averaged over all generated
+
+test files.
 
 4 Results and Discussion
 4.1 Objective Metric Comparison
-T able 5
-WER, SIM-o, and UTMOS comparison across the base model and three fine-tuned checkpoints.
-Model Selection WER (%) âˆ†WER vs. base SIM-o UTMOS
-Base OmniVoice pretrained base 22.55 0.00 0.602 3.64
-Fine-tuned 1000 lr 2e-5, step 1000 20.07 -2.48 0.610 3.60
-Fine-tuned 2000 lr 5e-6, step 2000 22.64 +0.09 0.611 3.57
-Fine-tuned 4900 lr 1e-5, step 4900 18.52 -4.03 0.604 3.61
-Table 5 shows that Filipino fine-tuning can improve generated-speech intelligibility, but the
-result depends on the fine-tuning configuration and checkpoint policy. The base model obtained
-22.55% WER, SIM-o of 0.602, and UTMOS of 3.64. The 1000-step checkpoint improved WER
-to 20.07% and increased SIM-o to 0.610, but UTMOS decreased slightly to 3.60. This suggests
-that the first fine-tuning run already moved the model toward clearer Filipino output while
-preserving voice similarity.
-The 2000-step checkpoint at a lower learning rate of 5e-6 did not improve overall perfor-
-mance. It achieved the highest SIM-o score, 0.611, but its WER rose to 22.64%, slightly worse
-than the base model. This means that speaker similarity alone is not sufficient for selecting the
-strongest model. A voice cloning system must also say the intended words accurately.
-The strongest result came from the 4900-step checkpoint in the 1e-5 run, selected by devel-
-opment loss. This checkpoint was selected at step 4900 with eval loss of 4.1618266105651855.
-It reached 18.52% WER, which is 4.03 absolute points lower than the base model and about
-17.9% relative WER reduction. Its SIM-o was 0.604, still slightly above the base model, while
-UTMOS was 3.61, slightly below the base model but comparable to the other fine-tuned check-
-points. For this pilot study, this is the strongest overall checkpoint because it provides the
-largest intelligibility gain without a major speaker-similarity or naturalness collapse.
-4.2 WER Error Analysis
-T able 6
-WER edit-operation counts on the full PLD Filipino test set.
-Model Insertions Deletions Substitutions Words
-Base OmniVoice 2,668 640 2,858 27,342
-Fine-tuned 1000 2,439 598 2,452 27,354
-Fine-tuned 2000 3,115 586 2,492 27,354
-Fine-tuned 4900 2,045 603 2,417 27,354
-The edit counts in Table 6 explain why the 4900-step checkpoint performed better. Compared
-with the base model, the 4900-step checkpoint reduced insertions from 2,668 to 2,045 and
-substitutions from 2,858 to 2,417. Deletions remained close to the base model. This indicates
-that the strongest improvement came from producing fewer extra words and fewer wrongly
-recognized words.
-The 2000-step checkpoint reduced deletions and substitutions compared with the base model,
-but insertions increased to 3,115. That increase was large enough to make the total WER worse
-9
+Table 3 and Figure 2 summarize the full-test-set comparison. The base model obtained 22.55% WER, 0.602 SIM-o, and 3.64
+UTMOS, confirming that OmniVoice is already a usable Filipino system before adaptation. Because the fine-tuned rows now share the same step budget and checkpoint policy, the differences between them are attributable mostly to learning rate, and they form a consistent pattern.
+The strongest result is FT-1e-5, selected at step 4900. It reached 18.52% WER, 4.03 absolute points below the base model and a 17.9% relative reduction, while keeping SIM-o slightly above base (0.604 versus 0.602). FT-2e-5 nearly matched that intelligibility at 18.83%
 
-than the base model. This finding is useful because it shows that a model may improve one
-type of recognition error while worsening another.
-4.3 Comparison Between Model Development and Model Testing
-During model development, development loss was used to monitor training and select check-
-points. The development-loss-selected 4900-step run did correspond to the lowest WER result,
-but the relationship is not perfectly simple. The 1000-step checkpoint had useful downstream
-gains even though it was a shorter run. The 2000-step 5e-6 run had the highest SIM-o but
-weaker WER. Therefore, development loss is helpful for checkpoint selection, but it must be
-validated with downstream audio metrics.
-The most significant factor contributing to improvement was the combination of longer train-
-ing, a repository-aligned learning rate of 1e-5, and saving a development-loss-selected checkpoint
-instead of only taking the last checkpoint. The 5e-6 run suggests that making the learning rate
-lower is not automatically beneficial under the same compute constraints.
-4.4 Other Findings
-Several practical findings emerged from the project:
-ÂˆReusing tokenized audio as a Kaggle dataset was important because tokenization is ex-
-pensive and repeated token extraction would waste runtime.
-ÂˆA conservative T4 setup was necessary: FP16, SDPA attention, small per-forward token
-batches, and gradient accumulation made training feasible.
-ÂˆFull-test evaluation is slow, so reusing the base row is practical when the evaluation setup
-is unchanged.
-ÂˆThe base OmniVoice model is already reasonably strong on Filipino, so improvements are
-measurable but not automatic.
-ÂˆThe strongest model should be chosen by a coherent metric pattern, not by a single
-number. For this study, WER is the primary metric because intelligibility is central, but
-SIM-o and UTMOS prevent selecting a clearer model that badly damages voice similarity
-or naturalness.
+1,000
+
+0 Base
+
+FT-5e-6
+
+FT-1e-5
+
+FT-2e-5
+
+Figure 3: Edit operations per system. FT-1e-5 and FT-2e-5 win mainly by cutting insertions and substitutions; FT-5e-6 loses most of its substitution gain to an insertion increase.
+
+WER, but it has the lowest SIM-o of all four systems at 0.583 -- the only fine-tuned value below the base model -- so its extra adaptation came at the cost of the reference voice. FT-5e-6 moved least: it preserved speaker similarity best among the fine-tunes (0.605) but improved WER by only 0.59 points.
+UTMOS separates the systems least: the base model keeps the highest predicted naturalness at 3.64 and the fine-tuned checkpoints sit close together at 3.60­3.61. These SIM-o and UTMOS differences are small and should not be over-read, but their direction is consistent. The comparison is an intelligibility-versus-speaker-similarity tradeoff governed by learning rate, not a single-metric win; FT1e-5 is the strongest overall checkpoint because it captures nearly all of the available intelligibility gain without giving up speaker similarity or much predicted naturalness.
+4.2 Error Analysis
+Table 4 and Figure 3 break WER into edit operations. The edit counts explain the ranking. Compared with the base
+model, FT-1e-5 reduced insertions from 2,668 to 2,045 and substitutions from 2,858 to 2,417, while deletions stayed near the base level; its improvement comes from producing fewer extra words and fewer wrongly recognized words. FT-2e-5 follows the same pattern with slightly more insertions and slightly fewer substitutions. FT-5e-6 instead cut substitutions to 2,426 but raised insertions to 3,005, above the base model, and that single increase absorbed most of its substitution gain. A fine-tuned model can therefore improve one error type while worsening another, which is why aggregate WER must be read together with its components.
+
+Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
+
+4.3 Development Loss versus Downstream Metrics
+Development loss was used to monitor training and select each run's checkpoint, and the relationship to downstream quality turned out to be useful but incomplete. Within-run, selecting the lowestdevelopment-loss checkpoint gave every run a principled stopping point, and the selected FT-1e-5 checkpoint produced the lowest WER of the study. Across runs, however, development loss could not have predicted the full metric pattern: FT-1e-5 and FT-2e-5 are separated by only 0.31 WER points yet by 0.021 SIM-o, and FT-5e6's insertion problem is invisible in its loss curve. Development loss is a good checkpoint-selection heuristic; checkpoints from different runs still must be compared with downstream audio metrics before declaring a winner.
+The earlier exploratory runs reinforce this. The preliminary 1000-step 2e-5 and 2000-step 5e-6 runs, which kept final-step checkpoints, produced 20.07% and 22.64% WER respectively -- the second slightly worse than the base model. Under the controlled 5000step best-development-loss setup, both learning rates improved on their exploratory counterparts, showing that the longer budget and development-loss-selected checkpointing contributed real gains independent of learning rate.
+4.4 Practical Findings
+Several workflow-level findings emerged. Reusing tokenized audio as a Kaggle dataset artifact was essential because token extraction is expensive and would otherwise be repeated every run. The conservative T4 recipe (FP16, SDPA attention, small per-forward token batches, gradient accumulation) made training feasible at all; a 1000-step run completed in roughly one hour. Full-test evaluation is slow, so reusing the base-model row across evaluation notebooks is practical when the evaluation setup is frozen. Finally, the strongest model should be chosen by a coherent metric pattern rather than a single number: WER is primary here because intelligibility is the research question, while SIM-o and UTMOS guard against selecting a clearer model that damages voice similarity or naturalness.
 4.5 Limitations
-This study uses automatic metrics only for the completed full test-set comparison. WER de-
-pends on the ASR model, so it is an ASR-mediated intelligibility estimate rather than a direct
-human comprehension score. SIM-o depends on the speaker encoder, and UTMOS is a learned
-predictor of MOS rather than an actual listening survey. The study is also limited to Filipino
-read speech and does not test spontaneous speech or other Philippine languages. Finally, Kaggle
-T4 compute limits constrained the number of hyperparameter runs.
-5 Conclusion and Recommendation
-5.1 Conclusion
-This pilot study found that Filipino-specific fine-tuning can improve OmniVoice performance
-for Filipino TTS and voice cloning. The strongest evaluated checkpoint was the 4900-step
-10
+The completed comparison uses automatic metrics only. WER depends on the ASR model (Whisper-large-v3 decoding Tagalog), so it estimates intelligibility as that ASR system hears it, and ASR for Filipino is itself imperfect; SIM-o depends on the speaker encoder; and UTMOS is a learned MOS predictor, not a listening survey, so the small naturalness differences reported here are predictions rather than human judgments. No human listener study has been conducted. The corpus is Filipino read speech with many short, isolated-word prompts, so the results say little about spontaneous speech, long-form prosody, or other Philippine languages. Compute limits also restricted the number of hyperparameter runs, so the controlled learning-rate comparison samples three points rather than a full sweep, with one run per learning rate and no variance estimate across seeds.
 
-checkpoint from the 1e-5 learning-rate run, selected by lowest development loss. It reduced WER
-from 22.55% to 18.52%, a 4.03 absolute point improvement over the base model, while keeping
-SIM-o slightly above the base model. This answers the main research question: supervised
-Filipino adaptation can improve intelligibility under limited compute, but the gains depend on
-the training configuration and checkpoint selection.
-The results also show that not all fine-tuning improves the model. The 2000-step 5e-6
-checkpoint achieved the highest SIM-o but had worse WER than the base model. Therefore,
-fine-tuned checkpoints should be compared using downstream metrics, not only training loss,
-development loss, or a single speaker-similarity score.
-5.2 Recommendations
-Future work should add a Filipino listener evaluation to validate whether the WER improvement
-matches human judgments of pronunciation, intelligibility, naturalness, and speaker similarity.
-The next experiments should test more checkpoints around the 1e-5 learning rate, compare
-last-checkpoint and development-loss-selected checkpoint policies, and inspect generated audio
-where WER errors remain high.
-Data improvements are also recommended. The current cleaned dataset excludes sponta-
-neous speech and digit-containing prompts, which made the first supervised run safer. Later
-work can create a carefully verified subset of longer sentence-level utterances, test whether reduc-
-ing very short clips improves speech generation, and study whether Filipino prosody improves
-with more curated sentence-level training data.
-Finally, the project should keep reporting results as trade-offs. A useful Filipino voice
-cloning model should reduce WER while maintaining speaker similarity and naturalness. For
-the current project, the recommended checkpoint for demonstration and reporting is the 4900-
-step checkpoint.
-6 References
+5 Conclusion and Recommendations
+Filipino-specific fine-tuning can improve OmniVoice for Filipino TTS and voice cloning, and in the controlled comparison the learning rate determines what kind of improvement is obtained. FT-1e-5 (best development loss at step 4900) reduced WER from 22.55% to 18.52% while keeping SIM-o slightly above the base model and is the recommended checkpoint. FT-2e-5 bought nearly the same intelligibility at a visible cost in speaker similarity, FT-5e-6 stayed closest to the base model on every axis, and the base model retained the highest predicted naturalness. The answer to the research question is therefore a tradeoff, not a uniform win: fine-tuning reliably improves intelligibility at well-chosen learning rates, while speaker similarity and predicted naturalness move within narrow margins whose direction depends on the learning rate.
+Three directions follow. First, a Filipino listener study should validate whether the WER gain matches human judgments of pronunciation, intelligibility, naturalness, and speaker similarity; the automatic metrics used here are proxies for all four. Second, the training side should sample more learning rates around 1e-5, repeat runs across seeds, and inspect generated audio where WER remains high. Third, the data side should build a verified subset of longer sentence-level utterances, since the current corpus is dominated by short prompts, and test whether sentence-level training data improves Filipino prosody. For demonstration and reporting, the recommended checkpoint is FT-1e-5.
 References
-Azzuni, H., and El Saddik, A. (2025). Voice cloning: Comprehensive survey.arXiv preprint
-arXiv:2505.00579.https://arxiv.org/abs/2505.00579
-Wang, C., Chen, S., Wu, Y., Zhang, Z., Zhou, L., Liu, S., Chen, Z., Liu, Y., Wang, H., Li,
-J., He, L., Zhao, S., and Wei, F. (2023). Neural codec language models are zero-shot text to
-speech synthesizers.arXiv preprint arXiv:2301.02111.https://arxiv.org/abs/2301.02111
-Le, M., Vyas, A., Shi, B., Karrer, B., Sari, L., Moritz, R., Williamson, M., Manohar, V.,
-Adi, Y., Mahadeokar, J., et al. (2023). Voicebox: Text-guided multilingual universal speech
-generation at scale.Advances in Neural Information Processing Systems, 36, 14005â€“14034.
-https://arxiv.org/abs/2306.15687
-Wang, Y., Zhan, H., Liu, L., Zeng, R., Guo, H., Zheng, J., Zhang, Q., Zhang, X., Zhang,
-S., and Wu, Z. (2024). MaskGCT: Zero-shot text-to-speech with masked generative codec
-transformer.arXiv preprint arXiv:2409.00750.https://arxiv.org/abs/2409.00750
-Chen, Y., Niu, Z., Ma, Z., Deng, K., Wang, C., Zhao, J., Yu, K., and Chen, X. (2024). F5-
-TTS: A fairytaler that fakes fluent and faithful speech with flow matching.arXiv preprint
-arXiv:2410.06885.https://arxiv.org/abs/2410.06885
-11
+[1] Hamza Azzuni and Abdulmotaleb El Saddik. 2025. Voice Cloning: Comprehensive Survey. arXiv preprint arXiv:2505.00579 (2025). https://arxiv.org/abs/2505.00579
+[2] Lukas Biewald. 2020. Experiment Tracking with Weights and Biases. Software available from Weights and Biases. https://www.wandb.com/
+[3] Boson AI. 2025. Higgs Audio V2: Redefining Expressiveness in Audio Generation. GitHub repository and release blog. https://github.com/boson-ai/higgs-audio
+[4] Rhandley D. Cajote, Rowena Cristina L. Guevara, Mark Gerard A. R. Bayona, and Crisron Rudolf G. Lucas. 2024. Philippine Languages Database: A Multilingual Speech Corpora for Developing Systems for Philippine Spoken Languages. In Proceedings of the 3rd Annual Meeting of the Special Interest Group on Underresourced Languages (SIGUL 2024). 264­271. https://aclanthology.org/2024.sigul1.32/
+[5] Sanyuan Chen, Chengyi Wang, Zhengyang Chen, Yu Wu, Shujie Liu, Zhuo Chen, Jinyu Li, Naoyuki Kanda, Takuya Yoshioka, Xiong Xiao, Jian Wu, Long Zhou, Shuo Ren, Yanmin Qian, Yao Qian, Jian Wu, Michael Zeng, Xiangzhan Yu, and Furu Wei. 2022. WavLM: Large-Scale Self-Supervised Pre-Training for Full Stack Speech Processing. IEEE Journal of Selected Topics in Signal Processing 16, 6 (2022), 1505­1518. https://arxiv.org/abs/2110.13900
+[6] Yushen Chen, Zhikang Niu, Ziyang Ma, Keqi Deng, Chunhui Wang, Jian Zhao, Kai Yu, and Xie Chen. 2024. F5-TTS: A Fairytaler that Fakes Fluent and Faithful Speech with Flow Matching. arXiv preprint arXiv:2410.06885 (2024). https: //arxiv.org/abs/2410.06885
+[7] Brecht Desplanques, Jenthe Thienpondt, and Kris Demuynck. 2020. ECAPATDNN: Emphasized Channel Attention, Propagation and Aggregation in TDNN Based Speaker Verification. In Proceedings of Interspeech 2020. https://arxiv.org/ abs/2005.07143
+[8] Matthew Le, Apoorv Vyas, Bowen Shi, Brian Karrer, Leda Sari, Rashel Moritz, Mary Williamson, Vimal Manohar, Yossi Adi, Jay Mahadeokar, and Wei-Ning Hsu. 2023. Voicebox: Text-Guided Multilingual Universal Speech Generation at Scale. In Advances in Neural Information Processing Systems, Vol. 36. 14005­14034. https://arxiv.org/abs/2306.15687
+[9] Vladimir I. Levenshtein. 1966. Binary Codes Capable of Correcting Deletions, Insertions and Reversals. Soviet Physics Doklady 10 (1966), 707­710.
+[10] Sinno Jialin Pan and Qiang Yang. 2010. A Survey on Transfer Learning. IEEE Transactions on Knowledge and Data Engineering 22, 10 (2010), 1345­1359. https: //doi.org/10.1109/TKDE.2009.191
+[11] Alec Radford, Jong Wook Kim, Tao Xu, Greg Brockman, Christine McLeavey, and Ilya Sutskever. 2022. Robust Speech Recognition via Large-Scale Weak Supervision. arXiv preprint arXiv:2212.04356 (2022). https://arxiv.org/abs/2212. 04356
 
-Zhu, H., Ye, L., Kang, W., Yao, Z., Guo, L., Kuang, F., Han, Z., Zhuang, W., Lin, L., and
-Povey, D. (2026). OmniVoice: Towards omnilingual zero-shot text-to-speech with diffusion
-language models.arXiv preprint arXiv:2604.00688.https://arxiv.org/abs/2604.00688
-Boson AI. (2025). Higgs Audio V2: Redefining expressiveness in audio generation. GitHub
-repository and release blog.https://github.com/boson-ai/higgs-audio
-Cajote, R. D., Guevara, R. C. L., Bayona, M. G. A. R., and Lucas, C. R. G. (2024). Philippine
-Languages Database: A multilingual speech corpora for developing systems for Philippine
-spoken languages.Proceedings of SIGUL 2024, 264â€“271.https://aclanthology.org/2024.
-sigul-1.32/
-Pan, S. J., and Yang, Q. (2010). A survey on transfer learning.IEEE Transactions on Knowledge
-and Data Engineering, 22(10), 1345â€“1359.https://doi.org/10.1109/TKDE.2009.191
-Levenshtein, V. I. (1966). Binary codes capable of correcting deletions, insertions and reversals.
-Soviet Physics Doklady, 10, 707â€“710.
-Radford, A., Kim, J. W., Xu, T., Brockman, G., McLeavey, C., and Sutskever, I. (2022).
-Robust speech recognition via large-scale weak supervision.arXiv preprint arXiv:2212.04356.
-https://arxiv.org/abs/2212.04356
-Desplanques, B., Thienpondt, J., and Demuynck, K. (2020). ECAPA-TDNN: Emphasized chan-
-nel attention, propagation and aggregation in TDNN based speaker verification.Proceedings
-of Interspeech 2020.https://arxiv.org/abs/2005.07143
-Chen, S., Wang, C., Chen, Z., Wu, Y., Liu, S., Chen, Z., Li, J., Kanda, N., Yoshioka, T.,
-Xiao, X., et al. (2021). WavLM: Large-scale self-supervised pre-training for full stack speech
-processing.IEEE Journal of Selected Topics in Signal Processing, 16(6), 1505â€“1518.https:
-//arxiv.org/abs/2110.13900
-Saeki, T., Xin, D., Nakata, W., Koriyama, T., Takamichi, S., and Saruwatari, H. (2022).
-UTMOS: UTokyo-SaruLab system for VoiceMOS Challenge 2022.Proceedings of Interspeech
-2022.https://arxiv.org/abs/2204.02152
-Biewald, L. (2020). Experiment tracking with Weights and Biases. Software available from
-Weights and Biases.https://www.wandb.com/
-12
+Bandojo et al.
+
+[12] Takaaki Saeki, Detai Xin, Wataru Nakata, Tomoki Koriyama, Shinnosuke Takamichi, and Hiroshi Saruwatari. 2022. UTMOS: UTokyo-SaruLab System for VoiceMOS Challenge 2022. In Proceedings of Interspeech 2022. https: //arxiv.org/abs/2204.02152
+[13] Chengyi Wang, Sanyuan Chen, Yu Wu, Ziqiang Zhang, Long Zhou, Shujie Liu, Zhuo Chen, Yanqing Liu, Huaming Wang, Jinyu Li, Lei He, Sheng Zhao, and Furu Wei. 2023. Neural Codec Language Models are Zero-Shot Text to Speech Synthesizers. arXiv preprint arXiv:2301.02111 (2023). https://arxiv.org/abs/2301. 02111
+[14] Yuancheng Wang, Haoyue Zhan, Liwei Liu, Ruihong Zeng, Haotian Guo, Jiachen Zheng, Qiang Zhang, Xueyao Zhang, Shunsi Zhang, and Zhizheng Wu. 2024. MaskGCT: Zero-Shot Text-to-Speech with Masked Generative Codec Transformer. arXiv preprint arXiv:2409.00750 (2024). https://arxiv.org/abs/2409.00750
+[15] Han Zhu, Lingfeng Ye, Wei Kang, Zengwei Yao, Liyong Guo, Fangjun Kuang, Zengrui Han, Weiji Zhuang, Long Lin, and Daniel Povey. 2026. OmniVoice:
+
+Towards Omnilingual Zero-Shot Text-to-Speech with Diffusion Language Models. arXiv preprint arXiv:2604.00688 (2026). https://arxiv.org/abs/2604.00688
+A Final Metric Comparison Figure B Weights and Biases Training Curves
+The full interactive experiment report is available in the project's W&B workspace (footnote in Section 3.3).
+C Fine-Tuning Run Screenshots D Generated Test Sample Tables
+
+Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
+Figure 4: WER, SIM-o, and UTMOS for the final controlled comparison on the full PLD Filipino test split.
+Figure 5: Combined W&B training-loss curves for the Filipino OmniVoice fine-tuning runs, including the preliminary exploratory runs.
+
+Bandojo et al.
+Figure 6: W&B run screenshot for the 5000-step fine-tuning run at learning rate 1e-5, whose best-development-loss checkpoint (step 4900) is the recommended model.
+
+Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
+Figure 7: W&B run screenshot for the preliminary exploratory 1000-step run at learning rate 2e-5 (project history; not part of the controlled comparison).
+
+Bandojo et al.
+Figure 8: W&B run screenshot for the preliminary exploratory 2000-step run at learning rate 5e-6 (project history; not part of the controlled comparison).
+Figure 9: W&B generated-test-samples table for the base OmniVoice model.
+
+Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech: A Pilot Study
+Figure 10: W&B generated-test-samples table for the 5000-step learning-rate 1e-5 fine-tuning run. Figure 11: W&B generated-test-samples table for the preliminary exploratory 1000-step checkpoint (project history). Figure 12: W&B generated-test-samples table for the preliminary exploratory 2000-step checkpoint (project history).
+
+
