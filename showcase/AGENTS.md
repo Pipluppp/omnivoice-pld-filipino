@@ -37,7 +37,9 @@ In-app keys: `d` toggles dark mode (handled by `src/components/theme-provider.ts
 | --- | --- |
 | `src/data/samples.ts` | Single source of truth: the 12 samples + transcripts + prompt mapping, the 4 models (labels, audio dirs, WER/SIM-o/UTMOS metrics), URL helpers |
 | `src/App.tsx` | Entire UI: how-it-works steps, sidebar, target text, voice-prompt card, compare panel (ground truth + models in one toggle), eval table |
-| `src/components/audio-player.tsx` | Custom `<audio>` player. `preservePosition` carries playback time + play state across `src` changes (the core A/B-comparison feature — don't break it) |
+| `src/components/audio-player.tsx` | Custom `<audio>` player with waveform scrubber. `preservePosition` carries playback time + play state across `src` changes (the core A/B-comparison feature — don't break it) |
+| `src/components/ui/waveform.tsx` | Canvas waveform + pointer-scrubbable `AudioScrubber`, adapted from the ElevenLabs UI registry (repaints on theme change — keep the MutationObserver) |
+| `src/hooks/use-waveform-peaks.ts` | Fetches + decodes each wav once (cached per URL) into normalized peaks for the waveform |
 | `src/hooks/use-audio-availability.ts` | HEAD-probes each expected wav and checks content-type to detect which files exist |
 | `public/audio/prompt/` | The 12 voice prompts — the cloning input the models heard (a different utterance from the same speaker) |
 | `public/audio/reference/` | The 12 ground-truth wavs of the target lines |

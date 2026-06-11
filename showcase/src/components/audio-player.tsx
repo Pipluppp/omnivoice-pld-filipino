@@ -2,7 +2,9 @@ import * as React from "react"
 import { Pause, Play } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
-import { Slider } from "@/components/ui/slider"
+import { AudioScrubber } from "@/components/ui/waveform"
+import { useWaveformPeaks } from "@/hooks/use-waveform-peaks"
+import { cn } from "@/lib/utils"
 
 function formatTime(seconds: number) {
   if (!Number.isFinite(seconds)) return "0:00"
@@ -21,11 +23,18 @@ interface AudioPlayerProps {
   className?: string
 }
 
+// Both icons stay mounted and cross-fade (skill: contextual icon animations).
+const ICON_CLASS =
+  "absolute inset-0 m-auto size-4 transition-[opacity,scale,filter] duration-200 ease-[cubic-bezier(0.2,0,0,1)]"
+const ICON_SHOWN = "scale-100 opacity-100 blur-none"
+const ICON_HIDDEN = "scale-[0.25] opacity-0 blur-[4px]"
+
 export function AudioPlayer({ src, preservePosition = false, className }: AudioPlayerProps) {
   const audioRef = React.useRef<HTMLAudioElement>(null)
   const [playing, setPlaying] = React.useState(false)
   const [duration, setDuration] = React.useState(0)
   const [time, setTime] = React.useState(0)
+  const peaks = useWaveformPeaks(src)
 
   // Capture the outgoing clip's state during render, before the <audio>
   // element receives the new src.
@@ -43,6 +52,17 @@ export function AudioPlayer({ src, preservePosition = false, className }: AudioP
     }
   }
 
+  // timeupdate only fires ~4×/s; animate the playhead between events.
+  React.useEffect(() => {
+    if (!playing) return
+    let frame = requestAnimationFrame(function tick() {
+      const audio = audioRef.current
+      if (audio) setTime(audio.currentTime)
+      frame = requestAnimationFrame(tick)
+    })
+    return () => cancelAnimationFrame(frame)
+  }, [playing])
+
   const handleLoadedMetadata = () => {
     const audio = audioRef.current
     if (!audio) return
@@ -51,7 +71,8 @@ export function AudioPlayer({ src, preservePosition = false, className }: AudioP
     if (carry) {
       carryRef.current = null
       audio.currentTime = Math.min(carry.time, Math.max(audio.duration - 0.05, 0))
-      if (carry.playing) void audio.play()
+      // Autoplay can be blocked if the gesture is gone; the play button still works.
+      if (carry.playing) audio.play().catch(() => {})
     }
   }
 
@@ -66,7 +87,7 @@ export function AudioPlayer({ src, preservePosition = false, className }: AudioP
     }
   }
 
-  const handleSeek = ([value]: number[]) => {
+  const handleSeek = (value: number) => {
     const audio = audioRef.current
     if (!audio || !Number.isFinite(audio.duration)) return
     audio.currentTime = value
@@ -91,19 +112,24 @@ export function AudioPlayer({ src, preservePosition = false, className }: AudioP
         size="icon"
         onClick={togglePlay}
         aria-label={playing ? "Pause" : "Play"}
+        className="relative size-10 rounded-full active:scale-[0.96]"
       >
-        {playing ? <Pause /> : <Play />}
+        {/* translate-x nudges the triangle optically center */}
+        <Play
+          aria-hidden
+          className={cn(ICON_CLASS, "translate-x-[1px]", playing ? ICON_HIDDEN : ICON_SHOWN)}
+        />
+        <Pause aria-hidden className={cn(ICON_CLASS, playing ? ICON_SHOWN : ICON_HIDDEN)} />
       </Button>
       <span className="w-10 text-right font-mono text-xs tabular-nums text-muted-foreground">
         {formatTime(time)}
       </span>
-      <Slider
-        value={[Math.min(time, duration || time)]}
-        max={duration || 1}
-        step={0.05}
-        onValueChange={handleSeek}
-        aria-label="Seek"
-        className="flex-1"
+      <AudioScrubber
+        data={peaks ?? []}
+        currentTime={time}
+        duration={duration}
+        onSeek={handleSeek}
+        className="h-12 flex-1"
       />
       <span className="w-10 font-mono text-xs tabular-nums text-muted-foreground">
         {formatTime(duration)}
