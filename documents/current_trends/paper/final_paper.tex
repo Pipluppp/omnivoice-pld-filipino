@@ -282,7 +282,7 @@ Table~\ref{tab:results-main} and Figure~\ref{fig:wer-chart} summarize the full-t
   \label{fig:wer-chart}
 \end{figure}
 
-The base model obtained 22.55\% WER, 0.602 SIM-o, and 3.64 UTMOS, confirming that OmniVoice is already a usable Filipino system before adaptation. Because the fine-tuned rows now share the same step budget and checkpoint policy, the differences between them are attributable mostly to learning rate, and they form a consistent pattern.
+The base model obtained 22.55\% WER, 0.602 SIM-o, and 3.64 UTMOS, confirming that OmniVoice is already a usable Filipino system before adaptation. Because the fine-tuned rows share the same step budget and checkpoint policy, the differences between them are attributable mostly to learning rate, and they form a consistent pattern.
 
 The strongest result is FT-1e-5, selected at step 4900. It reached 18.52\% WER, 4.03 absolute points below the base model and a 17.9\% relative reduction, while keeping SIM-o slightly above base (0.604 versus 0.602). FT-2e-5 nearly matched that intelligibility at 18.83\% WER, but it has the lowest SIM-o of all four systems at 0.583 --- the only fine-tuned value below the base model --- so its extra adaptation came at the cost of the reference voice. FT-5e-6 moved least: it preserved speaker similarity best among the fine-tunes (0.605) but improved WER by only 0.59 points.
 

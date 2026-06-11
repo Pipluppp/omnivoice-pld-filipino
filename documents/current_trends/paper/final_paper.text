@@ -397,8 +397,8 @@ Objective Metric Comparison
 Table 3 and Figure 2 summarize the full-test-set comparison.
 The base model obtained 22.55% WER, 0.602 SIM-o, and 3.64
 UTMOS, confirming that OmniVoice is already a usable Filipino
-system before adaptation. Because the fine-tuned rows now share
-the same step budget and checkpoint policy, the differences between
+system before adaptation. Because the fine-tuned rows share the
+same step budget and checkpoint policy, the differences between
 them are attributable mostly to learning rate, and they form a
 consistent pattern.
 The strongest result is FT-1e-5, selected at step 4900. It reached

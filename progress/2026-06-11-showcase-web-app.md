@@ -70,10 +70,12 @@ Done since the first write-up:
 - Committed on `main` and **deployed**:
   https://omnivoice-showcase.duncanb013.workers.dev
 - **Model audio embedded** — generated wavs for all 4 models × 5 utterances,
-  exported from the WandB evaluation tables of the Kaggle runs (downloaded
-  locally as `step-1000/` and `step-2000-and-best-eval-4900/`, gitignored).
-  Table label → showcase dir: `base`→`base`, `finetuned`→`finetune_lr_2e-5`,
-  `finetuned_2000`→`finetune_lr_5e-6`, `finetuned_best`→`finetune_lr_1e-5`.
+  exported from the WandB evaluation tables of the Kaggle runs (raw exports
+  kept locally as `step-1000/` and `step-2000-and-best-eval-4900/`,
+  gitignored). Table label → showcase dir: `base`→`base`,
+  `finetuned_best`→`finetune_lr_1e-5`; the `finetune_lr_2e-5` and
+  `finetune_lr_5e-6` wavs come from the `eval-2e-5-and-5e-6/` export
+  (see `2026-06-11-controlled-new-lr-eval.md`).
 - Added **voice prompts** (`public/audio/prompt/`) — the actual cloning input
   each model heard, a different utterance from the same speaker; UI shows a
   "Speaker audio" card with prompt + ground truth players.
@@ -85,13 +87,7 @@ Done since the first write-up:
 1. (Optional) Bump `compatibility_date` in `wrangler.jsonc` — pinned to
    `2026-05-01` because wrangler 4.86's local runtime rejected newer dates;
    upgrading wrangler lifts this.
-2. ~~If the controlled 5000-step LR reruns land, update labels/metrics in
-   `showcase/src/data/samples.ts` and re-export audio from the new runs.~~
-   **Done (later on 2026-06-11):** metrics/labels updated to the controlled
-   best-eval checkpoints and the `finetune_lr_2e-5` / `finetune_lr_5e-6` wavs
-   replaced with exports from `eval-2e-5-and-5e-6/`
-   (see `2026-06-11-controlled-new-lr-eval.md`). Redeployed.
-3. (Optional) The WandB tables also contain 7 speaker-0002 utterances per
+2. (Optional) The WandB tables also contain 7 speaker-0002 utterances per
    model that could be added as extra samples if desired.
 
 ## Verification already done (no need to redo)

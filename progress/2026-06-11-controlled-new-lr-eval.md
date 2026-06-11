@@ -1,7 +1,7 @@
 # 2026-06-11 controlled new-LR evaluation complete
 
-The controlled best-eval learning-rate comparison is finished. The two
-remaining 5000-step best-development-loss runs, at LR `2e-5`
+The controlled best-eval learning-rate comparison is finished. The
+5000-step best-development-loss runs at LR `2e-5`
 ([omnivoice_training_best_eval_lr_2e_5.py](../notebooks/omnivoice_training_best_eval_lr_2e_5.py))
 and LR `5e-6`
 ([omnivoice_training_best_eval_lr_5e_6.py](../notebooks/omnivoice_training_best_eval_lr_5e_6.py)),
@@ -47,7 +47,7 @@ WER edit-operation counts:
 
 ## Reading the results
 
-- LR `1e-5` remains the strongest overall by WER: 18.52%, a 4.03
+- LR `1e-5` is the strongest overall by WER: 18.52%, a 4.03
   absolute-point reduction versus base, with SIM-o slightly above base.
 - LR `2e-5` is very close in WER (18.83%) but has the lowest SIM-o (0.583),
   the only fine-tune below base. It cuts insertions and substitutions like the
@@ -60,7 +60,7 @@ WER edit-operation counts:
 The pattern is an intelligibility-versus-speaker-similarity/naturalness
 tradeoff, not a single-metric win: larger learning rates buy intelligibility,
 smaller ones preserve the base model's speaker similarity. LR `1e-5` is the
-best balance and stays the recommended checkpoint
+best balance and is the recommended checkpoint
 (`omnivoice-filipino-full-checkpoint-4900`).
 
 ## Downstream updates done with this note
@@ -69,6 +69,5 @@ best balance and stays the recommended checkpoint
   `hyperparameter_tuning.md`, `finetuning_plan.md`, `notebooks/README.md`.
 - Papers and final presentation rewritten around the four-model controlled
   comparison.
-- Showcase (`showcase/src/data/samples.ts`) metrics and labels updated to the
-  controlled checkpoints; LR `2e-5` and `5e-6` audio replaced with exports
-  from the new best-eval checkpoints.
+- Showcase (`showcase/src/data/samples.ts`) metrics, labels, and audio
+  aligned to the controlled best-eval checkpoints.
