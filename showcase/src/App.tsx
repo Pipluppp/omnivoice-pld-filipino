@@ -48,19 +48,19 @@ function MetricChip({ label, value }: { label: string; value: string }) {
 function HowItWorks() {
   const steps = [
     {
-      title: "The models hear a voice prompt",
+      title: "Models hear a voice prompt",
       detail:
-        "a short recording of the speaker saying a different line. This is the only audio they get.",
+        "a short clip of the speaker saying a different line — the only audio they get.",
     },
     {
-      title: "They are given the target text",
+      title: "Models must say the target text",
       detail:
-        "a sentence they must speak aloud in that speaker's voice. They never hear the real recording of it.",
+        "in that speaker's voice, without ever hearing the real recording of it.",
     },
     {
-      title: "You compare the results",
+      title: "You compare the attempts",
       detail:
-        "listen to each model's attempt next to the ground truth — the real speaker reading the same text.",
+        "each AI clone next to the ground truth — the real speaker reading the same line.",
     },
   ]
   return (
@@ -122,11 +122,10 @@ function ComparePanel({
           <CardTitle>Listen &amp; compare</CardTitle>
           <Badge variant="outline">step 3 · output</Badge>
         </div>
-        <CardDescription>
-          Ground truth is the real speaker; the rest are AI voice clones
-          generated from the prompt and the target text. Switch while playing —
-          the position is kept, so you hear the exact same moment in a
-          different voice.
+        <CardDescription className="text-pretty">
+          Ground truth is the real recording; the rest are AI clones. Switch
+          while playing — the position is kept, so you hear the exact same
+          moment in a different voice.
         </CardDescription>
       </CardHeader>
       <CardContent className="flex flex-col gap-4">
@@ -191,8 +190,7 @@ function ComparePanel({
           </div>
         ) : (
           <span className="text-xs text-muted-foreground">
-            Human recording — the real speaker reading the target text. The
-            models never heard this clip.
+            The real speaker's recording — the models never heard this clip.
           </span>
         )}
       </CardContent>
@@ -206,11 +204,10 @@ function EvalTable() {
     <Card>
       <CardHeader>
         <CardTitle>Evaluation summary</CardTitle>
-        <CardDescription>
-          Measured on the full PLD Filipino test split (not just the samples on
-          this page). Lower WER (intelligibility errors) is better; higher
-          SIM-o (voice similarity to the real speaker) and UTMOS (perceived
-          naturalness) are better.
+        <CardDescription className="text-pretty">
+          Scored on the full PLD Filipino test split, not just the clips on
+          this page. Lower WER (transcription errors) is better; higher SIM-o
+          (voice similarity) and UTMOS (naturalness) are better.
         </CardDescription>
       </CardHeader>
       <CardContent>
@@ -348,7 +345,7 @@ export function App() {
                 </span>
               </div>
               <h2 className="mb-1 text-xs font-medium uppercase tracking-wide text-muted-foreground">
-                Target text — what every model must say
+                Target text
               </h2>
               <blockquote className="text-pretty text-lg leading-relaxed">
                 “{sample.text}”
@@ -361,11 +358,9 @@ export function App() {
                   <CardTitle>Voice prompt</CardTitle>
                   <Badge variant="outline">steps 1–2 · input</Badge>
                 </div>
-                <CardDescription>
-                  The only audio the models received: speaker{" "}
-                  {sample.speaker} saying a <em>different</em> line. From this
-                  clip alone, each model has to imitate the voice and speak the
-                  target text above.
+                <CardDescription className="text-pretty">
+                  The only audio the models heard: speaker {sample.speaker}{" "}
+                  saying a <em>different</em> line.
                 </CardDescription>
               </CardHeader>
               <CardContent className="flex flex-col gap-2">
