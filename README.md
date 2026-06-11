@@ -4,6 +4,13 @@ This repository contains a course research project on Filipino voice cloning and
 
 OmniVoice already supports Filipino through the `fil` language ID. The project asks a narrower question: does Filipino-specific fine-tuning improve generated Filipino speech in intelligibility, speaker similarity, or naturalness?
 
+## Quick Links
+
+- [Machine Learning course paper](documents/machine_learning/machine_learning_paper.pdf)
+- [Current Trends final paper](documents/current_trends/paper/final_paper.pdf)
+- [Final proposal slides](documents/current_trends/presentation/final_beamer.pdf)
+- [OmniVoice Filipino showcase](https://omnivoice-showcase.duncanb013.workers.dev/)
+
 ## Current State
 
 The cleaned dataset package is ready for Kaggle:
