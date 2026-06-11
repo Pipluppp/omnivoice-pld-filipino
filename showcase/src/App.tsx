@@ -137,7 +137,7 @@ function ComparePanel({
           onValueChange={(value) => value && setSelectedId(value)}
           className="w-full max-w-full overflow-x-auto"
         >
-          <ToggleGroupItem value={GROUND_TRUTH_ID} className="flex-1">
+          <ToggleGroupItem value={GROUND_TRUTH_ID} className="h-10 flex-1">
             <span>Ground truth</span>
             <Kbd className="ml-1.5 hidden sm:inline-flex">1</Kbd>
           </ToggleGroupItem>
@@ -148,7 +148,7 @@ function ComparePanel({
                 key={model.id}
                 value={model.id}
                 disabled={!available}
-                className="flex-1"
+                className="h-10 flex-1"
               >
                 <span>{model.label}</span>
                 <Kbd className="ml-1.5 hidden sm:inline-flex">{index + 2}</Kbd>
@@ -166,7 +166,9 @@ function ComparePanel({
           })}
         </ToggleGroup>
 
-        <AudioPlayer src={src} preservePosition />
+        {/* Keyed per sample: the position carry-over is for model switches
+            within an utterance, not across different utterances. */}
+        <AudioPlayer key={sample.id} src={src} preservePosition />
         <Separator />
         {selectedModel ? (
           <div className="flex flex-wrap items-center gap-x-6 gap-y-2">
@@ -269,6 +271,8 @@ function EvalTable() {
 
 export function App() {
   const [sampleId, setSampleId] = React.useState(SAMPLES[0].id)
+  // Sections animate in when a sample is switched, but not on page load.
+  const [hasSwitched, setHasSwitched] = React.useState(false)
   const availability = useAudioAvailability(ALL_MODEL_URLS)
   const sample = SAMPLES.find((s) => s.id === sampleId) ?? SAMPLES[0]
   const sampleIndex = SAMPLES.indexOf(sample)
@@ -308,9 +312,12 @@ export function App() {
                   <li key={s.id} className="min-w-56 flex-1 lg:min-w-0">
                     <button
                       type="button"
-                      onClick={() => setSampleId(s.id)}
+                      onClick={() => {
+                        setSampleId(s.id)
+                        setHasSwitched(true)
+                      }}
                       aria-current={active ? "true" : undefined}
-                      className={`w-full rounded-lg border px-3 py-2.5 text-left transition-colors ${
+                      className={`w-full rounded-lg border px-3 py-2.5 text-left transition-[color,background-color,border-color,scale] active:scale-[0.96] ${
                         active
                           ? "border-foreground/30 bg-muted"
                           : "border-border hover:bg-muted/50"
@@ -333,7 +340,12 @@ export function App() {
           <div className="flex min-w-0 flex-col gap-6">
             <HowItWorks />
 
-            <section>
+            <section
+              key={sample.id}
+              className={
+                hasSwitched ? "motion-safe:animate-section-in" : undefined
+              }
+            >
               <div className="mb-3 flex flex-wrap items-center gap-2">
                 <Badge variant="secondary">
                   Sample {String(sampleIndex + 1).padStart(2, "0")}
@@ -352,7 +364,14 @@ export function App() {
               </blockquote>
             </section>
 
-            <Card>
+            <Card
+              key={`prompt-${sample.id}`}
+              className={
+                hasSwitched
+                  ? "motion-safe:animate-section-in motion-safe:[animation-delay:80ms]"
+                  : undefined
+              }
+            >
               <CardHeader>
                 <div className="flex items-center justify-between gap-2">
                   <CardTitle>Voice prompt</CardTitle>
