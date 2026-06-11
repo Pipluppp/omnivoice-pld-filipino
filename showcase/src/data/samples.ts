@@ -41,14 +41,14 @@ export const MODELS: ModelInfo[] = [
     id: "ft-2e-5",
     dir: "finetune_lr_2e-5",
     label: "LR 2e-5",
-    detail: "Fine-tuned, 5,000-step run, best dev-loss checkpoint",
+    detail: "Fine-tuned, 5,000-step run, best dev-loss checkpoint (step 5,000)",
     metrics: { wer: 18.83, werDelta: -3.72, simO: 0.583, utmos: 3.61 },
   },
   {
     id: "ft-5e-6",
     dir: "finetune_lr_5e-6",
     label: "LR 5e-6",
-    detail: "Fine-tuned, 5,000-step run, best dev-loss checkpoint",
+    detail: "Fine-tuned, 5,000-step run, best dev-loss checkpoint (step 5,000)",
     metrics: { wer: 21.96, werDelta: -0.59, simO: 0.605, utmos: 3.6 },
   },
   {

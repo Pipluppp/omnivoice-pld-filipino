@@ -2,10 +2,11 @@
 
 This folder holds the exported artifacts of the controlled new-learning-rate
 evaluation run (`full-filipino-pld-test-new-lr-rerun-eval`, W&B eval run
-`omnivoice-fil-new-lr-eval-892960a1`). It evaluated the two remaining
+`omnivoice-fil-new-lr-eval-892960a1`). It evaluated two of the three
 controlled fine-tunes — the best-development-loss checkpoints of the 5000-step
-LR `2e-5` and LR `5e-6` runs — on the full 4,322-utterance PLD Filipino test
-split, completing the final four-model comparison. The evaluation notebook is
+LR `2e-5` and LR `5e-6` runs, both selected at step 5000 — on the full
+4,322-utterance PLD Filipino test split, completing the final four-model
+comparison. The evaluation notebook is
 `../notebooks/omnivoice_evaluation_metrics_new_lr_reruns.py`.
 
 Evaluated W&B checkpoint artifacts:
@@ -56,7 +57,7 @@ come from the same W&B tables/dataset and are shared across systems.
 | --- | --- | ---: | ---: | ---: | ---: |
 | Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
 | Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
-| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
-| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint at step 5000 | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint at step 5000 | 21.96 | -0.59 | 0.605 | 3.60 |
 
 See `../progress/2026-06-11-controlled-new-lr-eval.md` for the full write-up.

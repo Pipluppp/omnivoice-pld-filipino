@@ -194,12 +194,12 @@ All runs fine-tune the pretrained \texttt{k2-fsa/OmniVoice} checkpoint, whose la
 
 The loss is OmniVoice's own training objective. OmniVoice is a single-stage non-autoregressive model trained with a discrete masked diffusion objective \cite{omnivoice}: random target audio-token positions are replaced by the mask token, and the model recovers the original token IDs only at those positions, conditioned on text, language, prompt audio, and unmasked target tokens. Our runs implement this as weighted cross-entropy over masked acoustic-token positions; text tokens, control tokens, prompt audio, and unmasked targets are excluded from the loss. The codebook weights [8, 8, 6, 6, 4, 4, 2, 2] emphasize lower codebooks, which carry coarser speech structure.
 
-Two preliminary runs (1000 steps at learning rate 2e-5 and 2000 steps at 5e-6, both keeping the final-step checkpoint) first established that the workflow runs end to end on Kaggle T4 hardware. Because they mixed checkpoint policy, step count, and learning rate, their results could not isolate any single setting and are treated as project history. The final comparison uses three controlled runs that share the same 5000-step budget and the same development-loss-selected checkpoint policy --- the development set is evaluated at fixed intervals and a checkpoint is saved only when development loss improves --- and differ only in learning rate:
+The comparison uses three controlled runs that share the same 5000-step budget and the same development-loss-selected checkpoint policy --- the development set is evaluated at fixed intervals and a checkpoint is saved only when development loss improves --- and differ only in learning rate:
 
 \begin{itemize}
-  \item \textbf{FT-5e-6:} the most conservative update; best-development-loss checkpoint.
+  \item \textbf{FT-5e-6:} the most conservative update; its lowest development loss occurred at the final step, 5000.
   \item \textbf{FT-1e-5:} the repository-aligned fine-tuning learning rate; its lowest development loss, 4.162, occurred at step 4900.
-  \item \textbf{FT-2e-5:} the most aggressive update; best-development-loss checkpoint.
+  \item \textbf{FT-2e-5:} the most aggressive update; its lowest development loss occurred at the final step, 5000.
 \end{itemize}
 
 The learning rates are deliberately lower than OmniVoice's large-scale pretraining setting because these runs update an already pretrained checkpoint on a much smaller corpus. The 1\% warmup gives 50 warmup steps per run.
@@ -245,9 +245,9 @@ Table~\ref{tab:results-main} and Figure~\ref{fig:wer-chart} summarize the full-t
     Model & WER (\%) & $\Delta$WER & SIM-o & UTMOS \\
     \midrule
     Base OmniVoice & 22.55 & --- & 0.602 & \textbf{3.64} \\
-    FT-5e-6 & 21.96 & $-$0.59 & \textbf{0.605} & 3.60 \\
+    FT-5e-6 (step 5000) & 21.96 & $-$0.59 & \textbf{0.605} & 3.60 \\
     FT-1e-5 (step 4900) & \textbf{18.52} & $-$4.03 & 0.604 & 3.61 \\
-    FT-2e-5 & 18.83 & $-$3.72 & 0.583 & 3.61 \\
+    FT-2e-5 (step 5000) & 18.83 & $-$3.72 & 0.583 & 3.61 \\
     \bottomrule
   \end{tabular}
 \end{table}
@@ -346,11 +346,9 @@ The edit counts explain the ranking. Compared with the base model, FT-1e-5 reduc
 
 Development loss was used to monitor training and select each run's checkpoint, and the relationship to downstream quality turned out to be useful but incomplete. Within-run, selecting the lowest-development-loss checkpoint gave every run a principled stopping point, and the selected FT-1e-5 checkpoint produced the lowest WER of the study. Across runs, however, development loss could not have predicted the full metric pattern: FT-1e-5 and FT-2e-5 are separated by only 0.31 WER points yet by 0.021 SIM-o, and FT-5e-6's insertion problem is invisible in its loss curve. Development loss is a good checkpoint-selection heuristic; checkpoints from different runs still must be compared with downstream audio metrics before declaring a winner.
 
-The earlier exploratory runs reinforce this. The preliminary 1000-step 2e-5 and 2000-step 5e-6 runs, which kept final-step checkpoints, produced 20.07\% and 22.64\% WER respectively --- the second slightly worse than the base model. Under the controlled 5000-step best-development-loss setup, both learning rates improved on their exploratory counterparts, showing that the longer budget and development-loss-selected checkpointing contributed real gains independent of learning rate.
-
 \subsection{Practical Findings}
 
-Several workflow-level findings emerged. Reusing tokenized audio as a Kaggle dataset artifact was essential because token extraction is expensive and would otherwise be repeated every run. The conservative T4 recipe (FP16, SDPA attention, small per-forward token batches, gradient accumulation) made training feasible at all; a 1000-step run completed in roughly one hour. Full-test evaluation is slow, so reusing the base-model row across evaluation notebooks is practical when the evaluation setup is frozen. Finally, the strongest model should be chosen by a coherent metric pattern rather than a single number: WER is primary here because intelligibility is the research question, while SIM-o and UTMOS guard against selecting a clearer model that damages voice similarity or naturalness.
+Several workflow-level findings emerged. Reusing tokenized audio as a Kaggle dataset artifact was essential because token extraction is expensive and would otherwise be repeated every run. The conservative T4 recipe (FP16, SDPA attention, small per-forward token batches, gradient accumulation) made training feasible at all, progressing at roughly 1000 steps per hour. Full-test evaluation is slow, so reusing the base-model row across evaluation notebooks is practical when the evaluation setup is frozen. Finally, the strongest model should be chosen by a coherent metric pattern rather than a single number: WER is primary here because intelligibility is the research question, while SIM-o and UTMOS guard against selecting a clearer model that damages voice similarity or naturalness.
 
 \subsection{Limitations}
 
@@ -377,40 +375,16 @@ Three directions follow. First, a Filipino listener study should validate whethe
   \label{fig:ct-final-four-model-metrics}
 \end{figure*}
 
-\section{Weights and Biases Training Curves}
-\label{app:ct-wandb-curves}
+\section{Fine-Tuning Run Record}
+\label{app:ct-finetune-run-screens}
 
 The full interactive experiment report is available in the project's W\&B workspace (footnote in Section 3.3).
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/finetunes_training_loss_together.png}}
-  \caption{Combined W\&B training-loss curves for the Filipino OmniVoice fine-tuning runs, including the preliminary exploratory runs.}
-  \label{fig:ct-finetunes-training-loss}
-\end{figure*}
-
-\section{Fine-Tuning Run Screenshots}
-\label{app:ct-finetune-run-screens}
 
 \begin{figure*}[t]
   \centering
   \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/step 5000 lr 1e-5.png}}
   \caption{W\&B run screenshot for the 5000-step fine-tuning run at learning rate 1e-5, whose best-development-loss checkpoint (step 4900) is the recommended model.}
   \label{fig:ct-step-5000-lr-1e-5}
-\end{figure*}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/step 1000 lr 2e-5.png}}
-  \caption{W\&B run screenshot for the preliminary exploratory 1000-step run at learning rate 2e-5 (project history; not part of the controlled comparison).}
-  \label{fig:ct-step-1000-lr-2e-5}
-\end{figure*}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/step 2000 lr 5e-6.png}}
-  \caption{W\&B run screenshot for the preliminary exploratory 2000-step run at learning rate 5e-6 (project history; not part of the controlled comparison).}
-  \label{fig:ct-step-2000-lr-5e-6}
 \end{figure*}
 
 \section{Generated Test Sample Tables}
@@ -428,20 +402,6 @@ The full interactive experiment report is available in the project's W\&B worksp
   \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/finetune_5000_test_samples.png}}
   \caption{W\&B generated-test-samples table for the 5000-step learning-rate 1e-5 fine-tuning run.}
   \label{fig:ct-finetune-5000-test-samples}
-\end{figure*}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/finetune_1000_test_samples.png}}
-  \caption{W\&B generated-test-samples table for the preliminary exploratory 1000-step checkpoint (project history).}
-  \label{fig:ct-finetune-1000-test-samples}
-\end{figure*}
-
-\begin{figure*}[t]
-  \centering
-  \includegraphics[width=0.92\textwidth,keepaspectratio]{\detokenize{../../images/finetune_2000_test_samples.png}}
-  \caption{W\&B generated-test-samples table for the preliminary exploratory 2000-step checkpoint (project history).}
-  \label{fig:ct-finetune-2000-test-samples}
 \end{figure*}
 
 \end{document}

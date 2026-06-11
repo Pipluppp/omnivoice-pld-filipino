@@ -80,11 +80,12 @@ WANDB_EVAL_RUN_ID = os.environ.get("WANDB_EVAL_RUN_ID") or (
     f"omnivoice-fil-eval-{uuid.uuid4().hex[:8]}"
 )
 
-# This is the artifact name produced by omnivoice_kaggle_initial.py when
-# TRAINING_STEPS=1000. Change only this line if you evaluate another checkpoint.
+# W&B checkpoint artifact to smoke-test; defaults to the recommended
+# best-eval LR 1e-5 checkpoint (step 4900). Change only this line if you
+# evaluate another checkpoint.
 FINETUNED_WANDB_ARTIFACT = (
     f"{WANDB_ENTITY}/{WANDB_PROJECT}/"
-    "omnivoice-filipino-full-checkpoint-1000:latest"
+    "omnivoice-full-filipino-pld-best-eval-lr-1e-5-checkpoint-best:latest"
 )
 
 # If you attach a checkpoint as a Kaggle Model instead, set this to that directory

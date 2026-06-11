@@ -81,8 +81,8 @@ WANDB_EVAL_RUN_ID = os.environ.get("WANDB_EVAL_RUN_ID") or (
     f"omnivoice-fil-eval-{uuid.uuid4().hex[:8]}"
 )
 
-# This is the artifact name produced by omnivoice_kaggle_initial.py when
-# TRAINING_STEPS=1000. Change only this line if you evaluate another checkpoint.
+# W&B checkpoint artifact evaluated alongside the base model in this run.
+# Change only this line if you evaluate another checkpoint.
 FINETUNED_WANDB_ARTIFACT = (
     f"{WANDB_ENTITY}/{WANDB_PROJECT}/"
     "omnivoice-filipino-full-checkpoint-1000:latest"

@@ -287,8 +287,8 @@ Final full test-set objective results (controlled comparison; all fine-tunes use
 | --- | --- | ---: | ---: | ---: | ---: |
 | Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
 | Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
-| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
-| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint at step 5000 | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint at step 5000 | 21.96 | -0.59 | 0.605 | 3.60 |
 
 Strongest overall model: the best-eval LR `1e-5` checkpoint (`omnivoice-filipino-full-checkpoint-4900`). It has the lowest WER and therefore the strongest intelligibility result, with SIM-o slightly above base. LR `2e-5` is close in WER but drops SIM-o below base; LR `5e-6` keeps the best fine-tune SIM-o but gains little WER. The base model keeps the highest UTMOS, so the comparison should be reported as an intelligibility-versus-speaker-similarity/naturalness tradeoff, not a single-metric win.
 

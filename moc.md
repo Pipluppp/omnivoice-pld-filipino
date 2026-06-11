@@ -60,21 +60,20 @@ Data Collective page, and app screenshots used in the proposal presentation.
 `notebooks/` contains Kaggle notebook-style `.py` files with `# %%` cells. These
 mirror the scripts pasted into Kaggle notebooks.
 
-- `notebooks/omnivoice_training.py` produced the early exploratory 1000-step
-  checkpoint.
 - `notebooks/omnivoice_training_best_eval.py` is the controlled 5000-step
-  best-development-loss run at LR `1e-5`.
+  best-development-loss run at LR `1e-5` and the template the other two runs
+  repeat.
 - `notebooks/omnivoice_training_best_eval_lr_2e_5.py` and
   `notebooks/omnivoice_training_best_eval_lr_5e_6.py` repeat the same
   controlled setup at LR `2e-5` and LR `5e-6`.
 - `notebooks/tokenize_dataset.py` handles tokenization in Kaggle.
-- `notebooks/omnivoice_evaluation_metrics.py` evaluates the base model and the
-  first fine-tuned checkpoint.
-- `notebooks/omnivoice_evaluation_metrics_finetunes.py` evaluates later
-  fine-tuned checkpoints and reuses the base metric row.
-- `notebooks/omnivoice_evaluation_metrics_new_lr_reruns.py` evaluates the
-  controlled best-eval LR `2e-5` and LR `5e-6` checkpoints; its exported
-  artifacts live in `eval-2e-5-and-5e-6/`.
+- `notebooks/omnivoice_evaluation_metrics.py` is the first full evaluation
+  run; it produced the base-model metric row reused by the later evaluations.
+- `notebooks/omnivoice_evaluation_metrics_finetunes.py` produced the metric
+  row of the LR `1e-5` checkpoint (step 4900), reusing the base row.
+- `notebooks/omnivoice_evaluation_metrics_new_lr_reruns.py` produced the
+  metric rows of the LR `2e-5` and LR `5e-6` checkpoints (both step 5000);
+  its exported artifacts live in `eval-2e-5-and-5e-6/`.
 - `notebooks/smoke_evaluation_metrics.py` is for smaller evaluation checks.
 - `notebooks/README.md` gives a short notebook summary and metric table.
 
@@ -146,8 +145,6 @@ fine-tunes on 12 test utterances, with the final metric table.
 
 - `progress/2026-05-18-omnivoice-kaggle-smoke.md` records early Kaggle
   smoke-test progress.
-- `progress/2026-05-19-full-train-track-metrics.md` records training and
-  evaluation progress after the first full metric runs (now project history).
 - `progress/2026-06-11-showcase-web-app.md` records the audio comparison
   showcase web app build.
 - `progress/2026-06-11-controlled-new-lr-eval.md` records the completed
@@ -186,8 +183,8 @@ best-development-loss fine-tuning runs that differ only in learning rate:
 | --- | --- | ---: | ---: | ---: | ---: |
 | Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
 | Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
-| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
-| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint at step 5000 | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint at step 5000 | 21.96 | -0.59 | 0.605 | 3.60 |
 
 The strongest overall model is the best-eval LR `1e-5` checkpoint
 (`omnivoice-filipino-full-checkpoint-4900`). It has the lowest WER, reducing the
@@ -195,9 +192,7 @@ base model from 22.55% to 18.52%, with SIM-o slightly above base. LR `2e-5` is
 nearly as intelligible (18.83% WER) but loses speaker similarity (SIM-o 0.583),
 and LR `5e-6` keeps the best fine-tune SIM-o (0.605) with only a modest WER
 gain. The base model has the highest UTMOS (3.64), so the overall finding is an
-intelligibility-versus-speaker-similarity/naturalness tradeoff. Earlier
-exploratory final-step checkpoints (1000-step `2e-5`, 2000-step `5e-6`) are
-project history, not part of this comparison.
+intelligibility-versus-speaker-similarity/naturalness tradeoff.
 
 ## Generated and Cache Files
 

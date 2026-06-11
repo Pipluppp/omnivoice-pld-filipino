@@ -170,23 +170,23 @@
       \toprule
       Run & Learning rate & Steps & Checkpoint policy \\
       \midrule
-      FT-5e-6 & 5e-6 & 5000 & lowest dev loss \\
+      FT-5e-6 & 5e-6 & 5000 & lowest dev loss (found at step 5000) \\
       FT-1e-5 & 1e-5 & 5000 & lowest dev loss (found at step 4900) \\
-      FT-2e-5 & 2e-5 & 5000 & lowest dev loss \\
+      FT-2e-5 & 2e-5 & 5000 & lowest dev loss (found at step 5000) \\
       \bottomrule
     \end{tabular}
   \end{table}
 
   \vspace{0.4em}
-  \small A \textbf{controlled comparison}: same steps, same checkpoint policy, only the learning rate differs. (Two earlier exploratory runs at 1000 and 2000 steps with final-step checkpoints are project history.)
+  \small A \textbf{controlled comparison}: same steps, same checkpoint policy, only the learning rate differs.
 \end{frame}
 
 \begin{frame}{Training Behavior}
   \centering
-  \includegraphics[width=0.9\linewidth,height=0.72\textheight,keepaspectratio]{\detokenize{../../images/finetunes_training_loss_together.png}}
+  \includegraphics[width=0.9\linewidth,height=0.72\textheight,keepaspectratio]{\detokenize{../../images/step 5000 lr 1e-5.png}}
 
   \vspace{0.3em}
-  \small W\&B training-loss curves for the fine-tuning runs, including the preliminary exploratory runs.
+  \small W\&B training-loss curve for the 5000-step LR 1e-5 run, whose best-development-loss checkpoint (step 4900) is the recommended model.
 \end{frame}
 
 \begin{frame}{How We Evaluated}

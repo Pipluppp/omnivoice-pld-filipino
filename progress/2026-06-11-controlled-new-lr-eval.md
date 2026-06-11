@@ -33,8 +33,8 @@ checkpoint policy, so differences are attributable mostly to learning rate.
 | --- | --- | ---: | ---: | ---: | ---: |
 | Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
 | Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
-| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
-| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint at step 5000 | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint at step 5000 | 21.96 | -0.59 | 0.605 | 3.60 |
 
 WER edit-operation counts:
 
@@ -53,8 +53,8 @@ WER edit-operation counts:
   the only fine-tune below base. It cuts insertions and substitutions like the
   `1e-5` run but pays in speaker similarity.
 - LR `5e-6` keeps the best fine-tune SIM-o (0.605) but improves WER by only
-  0.59 points; its insertions (3,005) stay above base, the same pattern the
-  old 2000-step `5e-6` run showed.
+  0.59 points; its insertions (3,005) stay above base, absorbing most of its
+  substitution gain.
 - Base keeps the highest UTMOS (3.64); the fine-tunes are close at 3.60-3.61.
 
 The pattern is an intelligibility-versus-speaker-similarity/naturalness
@@ -68,7 +68,7 @@ best balance and stays the recommended checkpoint
 - Final tables updated across `readme.md`, `task.md`, `moc.md`,
   `hyperparameter_tuning.md`, `finetuning_plan.md`, `notebooks/README.md`.
 - Papers and final presentation rewritten around the four-model controlled
-  comparison; old 1000-step/2000-step results moved to project history.
+  comparison.
 - Showcase (`showcase/src/data/samples.ts`) metrics and labels updated to the
   controlled checkpoints; LR `2e-5` and `5e-6` audio replaced with exports
   from the new best-eval checkpoints.

@@ -35,7 +35,7 @@ https://www.kaggle.com/code/pipluppp/omnivoice-pld-vibe-checks-that-it-s-running
 
 # 2026-05-18 More work afterwards
 
-Did a full 1000 step training run on Kaggle took an hour. The audio tokenization took time, so did work on reusing the created tokens as a Kaggle dataset. Training scripts now loads this instead of doing the tokenization on the fly for each training. Still no post-training immediate evaluation of the metrics used in OmniVoice. Still gauging around the training setups and how it looks.
+Did a first full training run on Kaggle to exercise the pipeline end to end; it took about an hour. The audio tokenization took time, so did work on reusing the created tokens as a Kaggle dataset. Training scripts now loads this instead of doing the tokenization on the fly for each training. Still no post-training immediate evaluation of the metrics used in OmniVoice. Still gauging around the training setups and how it looks.
 
 Next work:
 

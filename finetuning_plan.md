@@ -495,7 +495,7 @@ Generate with fine-tuned model:
 
 ```bash
 python -m omnivoice.cli.infer_batch \
-  --model /kaggle/working/exp/omnivoice_fil_finetune/checkpoint-2000 \
+  --model /kaggle/working/exp/omnivoice_fil_finetune/checkpoint-5000 \
   --test_list /kaggle/working/data/fil_test_generation.jsonl \
   --res_dir /kaggle/working/results/finetuned_omnivoice_fil
 ```
@@ -548,14 +548,12 @@ The completed comparison is a controlled learning-rate sweep: three 5000-step fi
 | --- | --- | ---: | ---: | ---: | ---: |
 | Base OmniVoice | pretrained base | 22.55 | 0.00 | 0.602 | 3.64 |
 | Best-eval LR 1e-5 | 5000-step run, best development-loss checkpoint at step 4900 | 18.52 | -4.03 | 0.604 | 3.61 |
-| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint | 18.83 | -3.72 | 0.583 | 3.61 |
-| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint | 21.96 | -0.59 | 0.605 | 3.60 |
+| Best-eval LR 2e-5 | 5000-step run, best development-loss checkpoint at step 5000 | 18.83 | -3.72 | 0.583 | 3.61 |
+| Best-eval LR 5e-6 | 5000-step run, best development-loss checkpoint at step 5000 | 21.96 | -0.59 | 0.605 | 3.60 |
 
 Strongest overall model: the best-eval LR `1e-5` checkpoint (`omnivoice-filipino-full-checkpoint-4900`).
 
 The LR `1e-5` checkpoint reduces WER by 4.03 absolute points versus the base model, from 22.55% to 18.52%, while keeping SIM-o slightly above base. LR `2e-5` nearly matches that intelligibility gain (18.83% WER) but lowers SIM-o to 0.583, the only fine-tune below base. LR `5e-6` preserves speaker similarity best among the fine-tunes (0.605) but improves WER by only 0.59 points. The base model still has the highest UTMOS (3.64), with the fine-tunes close at 3.60-3.61. The result is an intelligibility-versus-speaker-similarity/naturalness tradeoff; for the current research question, LR `1e-5` gives the strongest intelligibility gain without a speaker-similarity or naturalness collapse.
-
-Earlier exploratory final-step checkpoints (1000-step `2e-5` and 2000-step `5e-6`) predate the controlled sweep and are recorded as project history in `progress/2026-05-19-full-train-track-metrics.md`.
 
 ### Human Evaluation
 

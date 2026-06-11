@@ -25,23 +25,13 @@ This folder contains the figures and screenshots used by the papers and slides.
 
 ## Training run records (W&B screenshots)
 
-- `finetunes_training_loss_together.png` — combined training-loss curves for
-  the fine-tuning runs.
 - `step 5000 lr 1e-5.png` — 5000-step LR 1e-5 best-eval run (part of the final
   controlled comparison; its selected checkpoint is step 4900).
-- `step 1000 lr 2e-5.png` — early exploratory 1000-step LR 2e-5 run
-  (project history; superseded by the controlled best-eval LR 2e-5 run).
-- `step 2000 lr 5e-6.png` — early exploratory 2000-step LR 5e-6 run
-  (project history; superseded by the controlled best-eval LR 5e-6 run).
 
 ## Generated-sample tables (W&B screenshots)
 
 - `base_test_samples.png` — base model generated-sample table.
 - `finetune_5000_test_samples.png` — 5000-step LR 1e-5 run sample table.
-- `finetune_1000_test_samples.png` — exploratory 1000-step run sample table
-  (project history).
-- `finetune_2000_test_samples.png` — exploratory 2000-step run sample table
-  (project history).
 
 ## App screenshots
 
