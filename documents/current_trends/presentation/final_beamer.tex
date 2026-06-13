@@ -9,7 +9,7 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usetikzlibrary{arrows.meta,backgrounds,fit,positioning}
+\usetikzlibrary{arrows.meta,backgrounds,calc,fit,positioning}
 
 \title[Filipino OmniVoice Fine-Tuning]{Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech}
 \subtitle{Final Project Presentation}
@@ -121,52 +121,7 @@
 \begin{frame}{System Architecture}
   \centering
   \scriptsize
-  \resizebox{0.96\linewidth}{!}{%
-  \begin{tikzpicture}[
-    node distance=0.45cm and 0.65cm,
-    layerblue/.style={draw, rounded corners, inner sep=0.24cm, fill=blue!7},
-    layerpurple/.style={draw, rounded corners, inner sep=0.24cm, fill=purple!7},
-    layerteal/.style={draw, rounded corners, inner sep=0.24cm, fill=teal!7},
-    box/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.05cm, fill=white},
-    artifact/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.05cm, fill=green!9},
-    appbox/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.05cm, fill=orange!10},
-    arrow/.style={-{Latex[length=2mm]}, thick}
-  ]
-    \node[box] (raw) {PLD Filipino\\WAV + LOG};
-    \node[box, right=of raw] (clean) {Cleaning\\read speech filters};
-    \node[artifact, right=of clean] (splits) {Speaker-disjoint\\JSONL splits};
-
-    \node[box, below=0.75cm of clean] (tokenizer) {Higgs audio\\tokenizer};
-    \node[artifact, right=of tokenizer] (shards) {8-codebook\\WebDataset shards};
-    \node[box, right=of shards] (train) {OmniVoice SFT\\Kaggle T4 + W\&B};
-    \node[artifact, right=of train] (ckpt) {Fine-tuned\\checkpoints};
-
-    \node[box, below=0.75cm of shards] (infer) {Matched test\\inference};
-    \node[box, right=of infer] (eval) {WER, SIM-o,\\UTMOS};
-    \node[appbox, right=of eval] (showcase) {Cloudflare\\showcase app};
-
-    \begin{scope}[on background layer]
-      \node[layerblue, fit=(raw)(clean)(splits), label={[font=\bfseries\tiny]above:Data layer}] {};
-      \node[layerpurple, fit=(tokenizer)(shards)(train)(ckpt), label={[font=\bfseries\tiny]above:Training layer}] {};
-      \node[layerteal, fit=(infer)(eval)(showcase), label={[font=\bfseries\tiny]above:Evaluation and delivery layer}] {};
-    \end{scope}
-
-    \draw[arrow] (raw) -- (clean);
-    \draw[arrow] (clean) -- (splits);
-    \draw[arrow] (splits) -- (shards);
-    \draw[arrow] (tokenizer) -- (shards);
-    \draw[arrow] (shards) -- (train);
-    \draw[arrow] (train) -- (ckpt);
-    \draw[arrow] (ckpt) |- (infer);
-    \draw[arrow] (splits) |- (infer);
-    \draw[arrow] (infer) -- (eval);
-    \draw[arrow] (ckpt) |- (showcase);
-    \draw[arrow] (eval) -- (showcase);
-  \end{tikzpicture}%
-  }
-
-  \vspace{0.6em}
-  \small The workflow separates reusable data artifacts from compute-heavy Kaggle jobs, then routes checkpoints into both controlled metrics and a public listening showcase.
+  \resizebox{0.98\linewidth}{!}{\input{../../figures/system_architecture_tikz.tex}}
 \end{frame}
 
 \begin{frame}{Fine-Tuning Setup}

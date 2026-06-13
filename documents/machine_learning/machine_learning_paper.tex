@@ -12,7 +12,7 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,backgrounds,calc,fit,positioning}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 \hypersetup{
@@ -118,40 +118,14 @@ The general objective is to fine-tune and evaluate a pretrained multilingual TTS
 
 \subsection{System Architecture}
 
-The system has five major stages: dataset preparation, audio tokenization, model fine-tuning, inference, and evaluation.
+The system architecture separates reusable data artifacts, compute-heavy training jobs, and downstream evaluation or delivery outputs.
 
 \begin{figure}[H]
   \centering
-  \caption{Fine-tuning and evaluation system architecture.}
-  \label{fig:architecture}
   \small
-  \begin{tikzpicture}[
-    node distance=0.75cm and 0.75cm,
-    box/.style={draw, rounded corners, align=center, minimum height=0.9cm, minimum width=2.75cm, fill=blue!6},
-    outputbox/.style={draw, rounded corners, align=center, minimum height=0.9cm, minimum width=2.75cm, fill=green!8},
-    arrow/.style={-{Latex[length=2mm]}, thick}
-  ]
-    \node[box] (raw) {PLD Filipino\\WAV + LOG};
-    \node[box, right=of raw] (parse) {Parse and clean\\transcripts};
-    \node[box, right=of parse] (split) {Speaker-disjoint\\train/dev/test};
-    \node[box, below=of split] (jsonl) {OmniVoice\\JSONL manifests};
-    \node[box, left=of jsonl] (tokens) {Higgs Audio\\tokenization};
-    \node[box, left=of tokens] (webds) {WebDataset\\token shards};
-    \node[box, below=of tokens] (train) {Fine-tune OmniVoice\\on Kaggle T4};
-    \node[outputbox, below=of train] (ckpt) {Filipino-adapted\\checkpoint};
-    \node[box, right=of ckpt] (infer) {Matched Filipino\\inference};
-    \node[box, right=of infer] (eval) {WER, SIM-o,\\UTMOS};
-
-    \draw[arrow] (raw) -- (parse);
-    \draw[arrow] (parse) -- (split);
-    \draw[arrow] (split) -- (jsonl);
-    \draw[arrow] (jsonl) -- (tokens);
-    \draw[arrow] (tokens) -- (webds);
-    \draw[arrow] (webds) |- (train);
-    \draw[arrow] (train) -- (ckpt);
-    \draw[arrow] (ckpt) -- (infer);
-    \draw[arrow] (infer) -- (eval);
-  \end{tikzpicture}
+  \resizebox{\linewidth}{!}{\input{../figures/system_architecture_tikz.tex}}
+  \caption{System architecture for Filipino OmniVoice fine-tuning, evaluation, and public showcase delivery.}
+  \label{fig:architecture}
 \end{figure}
 
 \subsection{Dataset Preparation}

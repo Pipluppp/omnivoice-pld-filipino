@@ -2,10 +2,11 @@
 
 \usepackage{booktabs}
 \usepackage{array}
+\usepackage{graphicx}
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,backgrounds,calc,fit,positioning}
 \newcolumntype{P}[1]{>{\raggedright\arraybackslash}p{#1}}
 
 \settopmatter{printacmref=false}
@@ -87,35 +88,15 @@ Evaluation in zero-shot TTS usually separates intelligibility, speaker preservat
 
 \section{Methodology}
 
-Figure~\ref{fig:pipeline} shows the five stages of the workflow: dataset preparation, audio tokenization, fine-tuning, matched inference, and objective evaluation.
+Figure~\ref{fig:pipeline} shows the system architecture across data preparation, tokenization, Kaggle fine-tuning, evaluation, and public delivery.
 
-\begin{figure}[t]
+\begin{figure*}[t]
   \centering
   \small
-  \begin{tikzpicture}[
-    node distance=0.45cm and 0.5cm,
-    box/.style={draw, rounded corners, align=center, minimum height=0.85cm, minimum width=3.3cm, fill=blue!6, font=\footnotesize},
-    outputbox/.style={draw, rounded corners, align=center, minimum height=0.85cm, minimum width=3.3cm, fill=green!8, font=\footnotesize},
-    arrow/.style={-{Latex[length=2mm]}, thick}
-  ]
-    \node[box] (raw) {PLD Filipino WAV + LOG};
-    \node[box, below=of raw] (parse) {Parse, clean, filter transcripts};
-    \node[box, below=of parse] (split) {Speaker-disjoint train/dev/test\\+ OmniVoice JSONL};
-    \node[box, below=of split] (tokens) {Higgs Audio tokenization\\$\rightarrow$ WebDataset shards};
-    \node[box, below=of tokens] (train) {Fine-tune on Kaggle T4};
-    \node[outputbox, below=of train] (ckpt) {Fine-tuned checkpoints};
-    \node[box, below=of ckpt] (eval) {Matched test inference\\$\rightarrow$ WER, SIM-o, UTMOS};
-
-    \draw[arrow] (raw) -- (parse);
-    \draw[arrow] (parse) -- (split);
-    \draw[arrow] (split) -- (tokens);
-    \draw[arrow] (tokens) -- (train);
-    \draw[arrow] (train) -- (ckpt);
-    \draw[arrow] (ckpt) -- (eval);
-  \end{tikzpicture}
-  \caption{Fine-tuning and evaluation pipeline.}
+  \resizebox{0.98\textwidth}{!}{\input{../../figures/system_architecture_tikz.tex}}
+  \caption{System architecture for Filipino OmniVoice fine-tuning, evaluation, and public showcase delivery.}
   \label{fig:pipeline}
-\end{figure}
+\end{figure*}
 
 \subsection{Dataset and Pre-processing}
 

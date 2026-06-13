@@ -1,0 +1,124 @@
+\definecolor{archink}{HTML}{172033}
+\definecolor{archmuted}{HTML}{64748B}
+\definecolor{archdatafill}{HTML}{E8F7F0}
+\definecolor{archdataedge}{HTML}{1F9D68}
+\definecolor{archtrainfill}{HTML}{EEF2FF}
+\definecolor{archtrainedge}{HTML}{5B6EE1}
+\definecolor{archtokenfill}{HTML}{F8FAFC}
+\definecolor{archmaskfill}{HTML}{334155}
+\definecolor{archevalfill}{HTML}{E7F8FA}
+\definecolor{archevaledge}{HTML}{1698A7}
+\definecolor{archdeployfill}{HTML}{FFF1DF}
+\definecolor{archdeployedge}{HTML}{F38020}
+\colorlet{archslate}{archmuted!75}
+
+\begin{tikzpicture}[
+  font=\sffamily,
+  nodeBox/.style={rectangle, rounded corners=7pt, align=center, minimum height=1.1cm, text width=3.2cm, line width=0.75pt, text=archink},
+  smallBox/.style={rectangle, rounded corners=5pt, align=center, minimum height=0.85cm, text width=2.6cm, line width=0.65pt, font=\sffamily\scriptsize, text=archink},
+  dataBox/.style={nodeBox, fill=archdatafill, draw=archdataedge},
+  trainBox/.style={nodeBox, fill=archtrainfill, draw=archtrainedge},
+  evalBox/.style={smallBox, fill=archevalfill, draw=archevaledge},
+  deployBox/.style={smallBox, fill=archdeployfill, draw=archdeployedge},
+  note/.style={font=\sffamily\scriptsize, text=archmuted, align=center},
+  phaseTitle/.style={font=\sffamily\bfseries\small},
+  arrow/.style={-{Latex[length=2.3mm]}, line width=0.95pt, draw=archink},
+  dashArrow/.style={-{Latex[length=2.2mm]}, dashed, line width=0.85pt, draw=archmuted},
+  biArrow/.style={{Latex[length=2.3mm]}-{Latex[length=2.3mm]}, line width=0.95pt, draw=archink}
+]
+
+\begin{scope}[on background layer]
+  \filldraw[draw=archdataedge!70, fill=archdatafill!40, dashed, rounded corners=8pt, line width=0.7pt]
+    (0.7, -0.8) rectangle (15.5, -2.8);
+  \node[phaseTitle, text=archdataedge, anchor=north west] at (0.8, -0.9) {1. Dataset preparation};
+
+  \filldraw[draw=archtrainedge!70, fill=archtrainfill!40, dashed, rounded corners=8pt, line width=0.7pt]
+    (0.7, -3.0) rectangle (19.3, -6.3);
+  \node[phaseTitle, text=archtrainedge, anchor=north west] at (0.8, -3.1) {2. Tokenization and supervised fine-tuning};
+
+  \filldraw[draw=archevaledge!70, fill=archevalfill!40, dashed, rounded corners=8pt, line width=0.7pt]
+    (0.7, -6.7) rectangle (19.3, -10.7);
+  \node[phaseTitle, text=archevaledge, anchor=north west] at (0.8, -6.8) {3. Held-out evaluation and delivery};
+\end{scope}
+
+\node[dataBox] (raw)   at (2.8, -2.0) {\textbf{PLD Filipino}\\WAV audio +\\LOG transcripts};
+\node[dataBox] (clean) at (8.15, -2.0) {\textbf{Cleaning}\\read speech only\\1.0s--15.0s};
+\node[dataBox] (split) at (13.5, -2.0) {\textbf{Speaker-disjoint}\\train / dev / test\\JSONL splits};
+
+\draw[arrow] (raw) -- (clean);
+\draw[arrow] (clean) -- (split);
+
+\node[trainBox] (tokenizer) at (2.8, -5.0) {\textbf{Higgs Audio v2}\\continuous waveform\\to discrete tokens};
+
+\coordinate (gridOrigin) at (6.25, -5.56);
+\coordinate (textOrigin) at ($(gridOrigin)+(0.4, 1.35)$);
+
+\node[font=\sffamily\scriptsize\bfseries, text=archink] (gridTitle) at (8.15, -3.6) {8-codebook acoustic tokens};
+
+\node[note, anchor=south east] at ($(gridOrigin)+(-0.08, 0.6)$) {8\\layers};
+\node[note, anchor=north west] at ($(gridOrigin)+(3.88, 0.52)$) {masked\\target};
+\node[note, anchor=west] at ($(textOrigin)+(3.15, 0.14)$) {text};
+
+\foreach \x in {0,...,7} {
+  \draw[fill=archdeployfill, draw=archdeployedge!80, rounded corners=0.5pt] ($(textOrigin)+(\x*0.38,0)$) rectangle ++(0.31,0.28);
+}
+
+\foreach \y in {0,...,7} {
+  \foreach \x in {0,...,11} {
+    \pgfmathtruncatemacro{\m}{mod(2*\x+\y,5)}
+    \ifnum\m=0
+      \draw[fill=archmaskfill, draw=archmaskfill, rounded corners=0.5pt] ($(gridOrigin)+(\x*0.32,\y*0.14)$) rectangle ++(0.25,0.095);
+    \else
+      \draw[fill=archtokenfill, draw=archslate, rounded corners=0.5pt] ($(gridOrigin)+(\x*0.32,\y*0.14)$) rectangle ++(0.25,0.095);
+    \fi
+  }
+}
+
+\node[trainBox] (omni) at (13.5, -5.0) {\textbf{OmniVoice}\\pretrained multilingual TTS\\masked diffusion LM};
+
+\node[smallBox, fill=archtrainfill, draw=archtrainedge] (sft)  at (17.5, -4.35) {\textbf{SFT objective}\\weighted cross-entropy};
+\node[smallBox, fill=archtrainfill, draw=archtrainedge] (ckpt) at (17.5, -5.65) {\textbf{Best-dev}\\checkpoint selection\\LR comparison};
+
+\draw[arrow] (split.south) -- ++(0,-0.4) -| (gridTitle.north);
+\draw[arrow] (tokenizer.east) -- ($(gridOrigin)+(0, 0.56)$);
+\draw[arrow] ($(gridOrigin)+(3.84, 0.56)$) -- (omni.west);
+\draw[arrow] (omni.east) -- (sft.west);
+\draw[arrow] (omni.east) -- (ckpt.west);
+
+\node[evalBox] (infer) at (2.8, -9.0) {\textbf{Zero-shot inference}\\matched test prompts\\+ reference voices};
+\node[evalBox] (gen)   at (6.4, -9.0) {\textbf{Generated}\\Filipino speech};
+
+\node[evalBox] (wer) at (10.0, -8.0) {\textbf{Whisper ASR}\\WER};
+\node[evalBox] (sim) at (10.0, -9.0) {\textbf{ECAPA-TDNN}\\SIM-o};
+\node[evalBox] (mos) at (10.0, -10.0) {\textbf{UTMOS}\\naturalness};
+
+\node[deployBox] (react) at (13.5, -9.0) {\textbf{React audio}\\showcase};
+
+\node[deployBox] (cf) at (17.5, -9.0) {
+  \begin{tabular}{@{}c@{\hspace{4pt}}c@{}}
+    \begin{tikzpicture}[baseline=-0.6ex, scale=0.8]
+      \fill[archdeployedge] (-0.15,-0.05) circle (0.08);
+      \fill[archdeployedge] (0,0) circle (0.12);
+      \fill[archdeployedge] (0.15,-0.05) circle (0.08);
+      \fill[archdeployedge] (-0.15,-0.1) rectangle (0.15,-0.02);
+    \end{tikzpicture} &
+    \begin{tabular}{@{}c@{}}\textbf{Cloudflare}\\Workers\end{tabular}
+  \end{tabular}
+};
+
+\draw[biArrow] (infer.east) -- (gen.west);
+
+\draw[arrow] (gen.east) -- (wer.west);
+\draw[arrow] (gen.east) -- (sim.west);
+\draw[arrow] (gen.east) -- (mos.west);
+
+\draw[arrow] (wer.east) -| (react.north);
+\draw[arrow] (sim.east) -- (react.west);
+\draw[arrow] (mos.east) -| (react.south);
+
+\draw[arrow] (react.east) -- (cf.west);
+
+\draw[dashArrow] (ckpt.south) -- (17.5, -8.85);
+\node[note, anchor=west] at (17.6, -7.5) {selected checkpoint};
+
+\end{tikzpicture}
