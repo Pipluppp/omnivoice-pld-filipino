@@ -9,12 +9,12 @@
 \usepackage{tikz}
 \usepackage{pgfplots}
 \pgfplotsset{compat=1.18}
-\usetikzlibrary{arrows.meta,positioning}
+\usetikzlibrary{arrows.meta,backgrounds,fit,positioning}
 
 \title[Filipino OmniVoice Fine-Tuning]{Filipino Adaptation of OmniVoice for Voice Cloning and Text-to-Speech}
 \subtitle{Final Project Presentation}
 \author{}
-\institute{Current Trends}
+\institute{}
 \date{\today}
 \setbeamertemplate{footline}{}
 
@@ -118,39 +118,55 @@
   \small The 31.9 training hours are about \textbf{4$\times$} the Filipino hours in OmniVoice's original training mixture. Domains include news, medical sentences, stories, greetings, proverbs, and many isolated-word prompts.
 \end{frame}
 
-\begin{frame}{Pipeline}
+\begin{frame}{System Architecture}
   \centering
   \scriptsize
+  \resizebox{0.96\linewidth}{!}{%
   \begin{tikzpicture}[
-    node distance=0.45cm and 0.55cm,
-    box/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.0cm, fill=blue!6},
-    outputbox/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.0cm, fill=green!8},
+    node distance=0.45cm and 0.65cm,
+    layerblue/.style={draw, rounded corners, inner sep=0.24cm, fill=blue!7},
+    layerpurple/.style={draw, rounded corners, inner sep=0.24cm, fill=purple!7},
+    layerteal/.style={draw, rounded corners, inner sep=0.24cm, fill=teal!7},
+    box/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.05cm, fill=white},
+    artifact/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.05cm, fill=green!9},
+    appbox/.style={draw, rounded corners, align=center, minimum height=0.8cm, minimum width=2.05cm, fill=orange!10},
     arrow/.style={-{Latex[length=2mm]}, thick}
   ]
-    \node[box] (a) {PLD Filipino\\WAV + LOG};
-    \node[box, right=of a] (b) {Parse and clean\\transcripts};
-    \node[box, right=of b] (c) {Speaker-disjoint\\train/dev/test};
-    \node[box, below=of c] (d) {OmniVoice JSONL\\audio + text + \texttt{fil}};
-    \node[box, left=of d] (e) {Audio tokenization\\Higgs tokenizer};
-    \node[box, left=of e] (f) {WebDataset shards\\(reused Kaggle dataset)};
-    \node[box, below=of e] (g) {Fine-tune OmniVoice\\Kaggle T4};
-    \node[outputbox, below=of g] (h) {Checkpoints};
-    \node[box, right=of h] (i) {Matched test\\inference};
-    \node[box, right=of i] (j) {WER, SIM-o,\\UTMOS};
+    \node[box] (raw) {PLD Filipino\\WAV + LOG};
+    \node[box, right=of raw] (clean) {Cleaning\\read speech filters};
+    \node[artifact, right=of clean] (splits) {Speaker-disjoint\\JSONL splits};
 
-    \draw[arrow] (a) -- (b);
-    \draw[arrow] (b) -- (c);
-    \draw[arrow] (c) -- (d);
-    \draw[arrow] (d) -- (e);
-    \draw[arrow] (e) -- (f);
-    \draw[arrow] (f) |- (g);
-    \draw[arrow] (g) -- (h);
-    \draw[arrow] (h) -- (i);
-    \draw[arrow] (i) -- (j);
-  \end{tikzpicture}
+    \node[box, below=0.75cm of clean] (tokenizer) {Higgs audio\\tokenizer};
+    \node[artifact, right=of tokenizer] (shards) {8-codebook\\WebDataset shards};
+    \node[box, right=of shards] (train) {OmniVoice SFT\\Kaggle T4 + W\&B};
+    \node[artifact, right=of train] (ckpt) {Fine-tuned\\checkpoints};
+
+    \node[box, below=0.75cm of shards] (infer) {Matched test\\inference};
+    \node[box, right=of infer] (eval) {WER, SIM-o,\\UTMOS};
+    \node[appbox, right=of eval] (showcase) {Cloudflare\\showcase app};
+
+    \begin{scope}[on background layer]
+      \node[layerblue, fit=(raw)(clean)(splits), label={[font=\bfseries\tiny]above:Data layer}] {};
+      \node[layerpurple, fit=(tokenizer)(shards)(train)(ckpt), label={[font=\bfseries\tiny]above:Training layer}] {};
+      \node[layerteal, fit=(infer)(eval)(showcase), label={[font=\bfseries\tiny]above:Evaluation and delivery layer}] {};
+    \end{scope}
+
+    \draw[arrow] (raw) -- (clean);
+    \draw[arrow] (clean) -- (splits);
+    \draw[arrow] (splits) -- (shards);
+    \draw[arrow] (tokenizer) -- (shards);
+    \draw[arrow] (shards) -- (train);
+    \draw[arrow] (train) -- (ckpt);
+    \draw[arrow] (ckpt) |- (infer);
+    \draw[arrow] (splits) |- (infer);
+    \draw[arrow] (infer) -- (eval);
+    \draw[arrow] (ckpt) |- (showcase);
+    \draw[arrow] (eval) -- (showcase);
+  \end{tikzpicture}%
+  }
 
   \vspace{0.6em}
-  \small Audio is tokenized once into 8-codebook acoustic tokens and reused across runs; training recovers masked acoustic tokens from text, language, and prompt audio.
+  \small The workflow separates reusable data artifacts from compute-heavy Kaggle jobs, then routes checkpoints into both controlled metrics and a public listening showcase.
 \end{frame}
 
 \begin{frame}{Fine-Tuning Setup}
@@ -333,7 +349,27 @@
 
 \begin{frame}{Application Use Case: Voice Cloning}
   \centering
-  \includegraphics[width=0.94\linewidth,height=0.78\textheight,keepaspectratio]{\detokenize{../../images/app 1.png}}
+  \includegraphics[width=0.94\linewidth,height=0.78\textheight,keepaspectratio]{\detokenize{../../../showcase-screenshot.png}}
+\end{frame}
+
+\begin{frame}{Public Showcase}
+  \begin{columns}[T]
+    \begin{column}{0.58\textwidth}
+      \Large \textbf{OmniVoice Filipino Showcase}
+
+      \vspace{0.8em}
+      \normalsize
+      Public demo for comparing reference audio, base OmniVoice, and Filipino fine-tuned outputs from the evaluation samples.
+
+      \vspace{1.0em}
+      \small
+      \url{https://omnivoice-showcase.duncanb013.workers.dev/}
+    \end{column}
+    \begin{column}{0.34\textwidth}
+      \centering
+      \includegraphics[width=0.82\linewidth,height=0.62\textheight,keepaspectratio]{\detokenize{../../../qrcode_omnivoice-showcase.duncanb013.workers.dev.png}}
+    \end{column}
+  \end{columns}
 \end{frame}
 
 \begin{frame}{References}
