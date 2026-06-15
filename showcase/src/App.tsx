@@ -398,8 +398,7 @@ export function App() {
 
         <footer className="border-t">
           <div className="mx-auto max-w-5xl px-6 py-5 text-xs text-muted-foreground">
-            OmniVoice Filipino fine-tuning · PLD dataset · PUP Computing Trends,
-            2026
+            OmniVoice Filipino fine-tuning · PLD dataset · PUP, 2026
           </div>
         </footer>
       </div>
